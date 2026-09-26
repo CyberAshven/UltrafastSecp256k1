@@ -7,11 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [4.6.1] - 2026-09-25
+## [4.6.2] - 2026-09-27
 
 A patch release for the OpenCL backend, GPU use from libbitcoin-direct
 consumers, and allocations retained at exit. The C ABI is unchanged
 (`UFSECP_ABI_VERSION` stays 4).
+
+> **4.6.1 was never released.** It was tagged on 2026-09-25, but the tagged
+> tree still reported version 4.6.0 and its OpenCL programs did not build:
+> `hash160`, `bip32`, `bip324`, `keccak256` and `frost` failed to compile, and
+> `extended`, `bip352` and `zk` still had the GH-436 link failure. A `Ufsecp`
+> 4.6.1 NuGet package was published from that tree; do not use it. Everything
+> intended for 4.6.1 is in this release.
 
 ### Fixed
 - **OpenCL programs failed to build on AMD ROCm (GH-436).** OpenCL C follows
