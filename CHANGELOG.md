@@ -9,9 +9,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [4.6.1] - 2026-09-25
 
+A patch release for the OpenCL backend, GPU use from libbitcoin-direct
+consumers, and allocations retained at exit. The C ABI is unchanged
+(`UFSECP_ABI_VERSION` stays 4).
+
 ### Fixed
-- **OpenCL AMD/ROCm kernel linking (GH-436)**: plain `inline` helpers had no external definition. Fixed by using `static inline` for all helpers (FORCE_INLINE macro + direct in other .cl files). All programs now link on AMD.
-- **GPU support for libbitcoin-direct consumers (GH-434, GH-435)**: 
+- **OpenCL programs failed to build on AMD ROCm (GH-436).** OpenCL C follows
+  C99 `inline` rules, so a helper declared plain `inline` has no external
+  definition. When AMD's compiler declined to inline one (`field_inv_impl`,
+  for example), `clBuildProgram` failed with `undefined hidden symbol`, the
+  OpenCL backend did not initialize, and callers silently got the CPU path.
+  Every helper in `src/opencl/kernels/*.cl` and in the kernel source embedded
+  in the OpenCL context is now `static inline`, and `FORCE_INLINE` expands to
+  `static` on every vendor. Reported by @echennells on an RX Vega 64 with
+  ROCm 7.1. The BCH and LTC OpenCL kernels have not been converted yet.
+- **OpenCL FROST partial-signature verification never built**
+  ([#440](https://github.com/shrec/UltrafastSecp256k1/pull/440), by
+  @echennells). `frost_verify_partial` passed its `__global` scalar inputs to
+  a helper that takes a private array, which OpenCL C does not allow, so
+  `secp256k1_frost.cl` failed to compile on AMD ROCm, Mesa rusticl and NVIDIA,
+  and `ufsecp_gpu_frost_verify_partial_batch` returned an error instead of a
+  result. The scalars are now copied into private buffers first.
+- **GPU support for libbitcoin-direct consumers (GH-434, GH-435)**:
   - Device selection restricted to real GPUs (CL_DEVICE_TYPE_GPU), CPU OpenCL devices no longer reported as available.
   - Runtime loading for OpenCL (no load-time dependency on OpenCL.dll / libOpenCL.so for static consumers).
   - Kernel sources embedded (or reliable module-relative discovery) so installed/static consumers find them without extra copies or env vars.
@@ -19,11 +38,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Metal preferred over OpenCL on Apple platforms.
   - ROCm/HIP path registered where possible.
   - Hook retention exported for pkg-config / installed static libbitcoin-direct consumers.
-- **Allocations retained at exit (GH-430)**: Generator tables moved to static storage (no heap magic static), explicit `release_process_resources()` / C ABI entry point, batch pool properly joined. Leak detectors no longer report the tables as leaks when release is used.
+- **Allocations retained at exit (GH-430)**: the 1,310,720-byte dual-multiplication
+  generator table now lives in static storage instead of a heap block, so the
+  MSVC CRT leak detector no longer reports it at exit, and the CUDA backend no
+  longer allocates a `thread_local` vector on attach.
 - **Packaging / CI fixes**: RPM build on Fedora now succeeds (libatomic + proper linker flags). CI Advisory Windows/MSVC excludes GPU hardware-dependent tests that cannot run on hosted runners. Linux packages workflow can now produce .deb/.rpm artifacts.
-- Other stability and regression guards for the above surfaces wired into unified audit runner and documented.
+- The BIP-352 OpenCL benchmark passes `-cl-nv-opt-level=3` only on NVIDIA, so
+  it builds on other vendors
+  ([#438](https://github.com/shrec/UltrafastSecp256k1/pull/438), by @echennells).
 
-All open issues at time of preparation addressed in this release. 4.6.1 release artifacts (deb/rpm) should now generate cleanly via the packaging workflow.
+### Audit
+- `regression_opencl_static_inline_link` now fails if any file in
+  `src/opencl/kernels/` or the kernel source embedded in the OpenCL context
+  declares a non-`static` `inline` helper or a non-`static` `FORCE_INLINE`,
+  with a negative control so it cannot pass vacuously.
+
+### Documentation
+- AMD Radeon RX Vega 64 OpenCL benchmark results under ROCm 7.1
+  ([#439](https://github.com/shrec/UltrafastSecp256k1/pull/439), by @echennells).
 
 ## [4.6.0] - 2026-09-24
 
