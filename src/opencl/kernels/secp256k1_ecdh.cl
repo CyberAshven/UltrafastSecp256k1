@@ -15,7 +15,7 @@
 // CT scalar multiplication for ECDH: fixed 256-iteration double-and-add.
 // No secret-dependent branches; scalar bits accessed via branchless mask.
 // ---------------------------------------------------------------------------
-inline void ct_ecdh_scalar_mul(JacobianPoint* r, const JacobianPoint* pk,
+static inline void ct_ecdh_scalar_mul(JacobianPoint* r, const JacobianPoint* pk,
                                 const Scalar* sk)
 {
     JacobianPoint R, T;
@@ -43,7 +43,7 @@ inline void ct_ecdh_scalar_mul(JacobianPoint* r, const JacobianPoint* pk,
 
 // ECDH: raw x-coordinate of shared secret (CT path — secret scalar)
 // shared_secret = x-coordinate of sk * PK (32 bytes, big-endian)
-inline int ecdh_compute_raw_impl(const Scalar* private_key,
+static inline int ecdh_compute_raw_impl(const Scalar* private_key,
                                   const JacobianPoint* peer_pubkey,
                                   uchar out[32])
 {
@@ -66,7 +66,7 @@ inline int ecdh_compute_raw_impl(const Scalar* private_key,
 }
 
 // ECDH: x-only hash: SHA-256(x)
-inline int ecdh_compute_xonly_impl(const Scalar* private_key,
+static inline int ecdh_compute_xonly_impl(const Scalar* private_key,
                                     const JacobianPoint* peer_pubkey,
                                     uchar out[32])
 {
@@ -82,7 +82,7 @@ inline int ecdh_compute_xonly_impl(const Scalar* private_key,
 }
 
 // ECDH: standard compressed hash: SHA-256(0x02 || x) (CT path — secret scalar)
-inline int ecdh_compute_impl(const Scalar* private_key,
+static inline int ecdh_compute_impl(const Scalar* private_key,
                               const JacobianPoint* peer_pubkey,
                               uchar out[32])
 {

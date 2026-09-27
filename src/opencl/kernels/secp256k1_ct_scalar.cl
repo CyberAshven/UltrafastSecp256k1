@@ -24,7 +24,7 @@
 // ---------------------------------------------------------------------------
 // Branchless reduce mod n: if val >= n, subtract n
 // ---------------------------------------------------------------------------
-inline void ct_reduce_order(Scalar* r) {
+static inline void ct_reduce_order(Scalar* r) {
     const ulong n[4] = { CT_ORDER_N0, CT_ORDER_N1, CT_ORDER_N2, CT_ORDER_N3 };
     ulong tmp[4];
     ulong borrow = ct_sub256(r->limbs, n, tmp);
@@ -36,7 +36,7 @@ inline void ct_reduce_order(Scalar* r) {
 // ---------------------------------------------------------------------------
 // CT scalar_add: r = (a + b) mod n
 // ---------------------------------------------------------------------------
-inline void ct_scalar_add_impl(const Scalar* a, const Scalar* b, Scalar* r) {
+static inline void ct_scalar_add_impl(const Scalar* a, const Scalar* b, Scalar* r) {
     ulong carry = ct_add256(a->limbs, b->limbs, r->limbs);
     const ulong n[4] = { CT_ORDER_N0, CT_ORDER_N1, CT_ORDER_N2, CT_ORDER_N3 };
     ulong tmp[4];
@@ -49,7 +49,7 @@ inline void ct_scalar_add_impl(const Scalar* a, const Scalar* b, Scalar* r) {
 // ---------------------------------------------------------------------------
 // CT scalar_sub: r = (a - b) mod n
 // ---------------------------------------------------------------------------
-inline void ct_scalar_sub_impl(const Scalar* a, const Scalar* b, Scalar* r) {
+static inline void ct_scalar_sub_impl(const Scalar* a, const Scalar* b, Scalar* r) {
     ulong borrow = ct_sub256(a->limbs, b->limbs, r->limbs);
     const ulong n[4] = { CT_ORDER_N0, CT_ORDER_N1, CT_ORDER_N2, CT_ORDER_N3 };
     ulong tmp[4];
@@ -62,7 +62,7 @@ inline void ct_scalar_sub_impl(const Scalar* a, const Scalar* b, Scalar* r) {
 // ---------------------------------------------------------------------------
 // CT scalar_neg: r = (-a) mod n = n - a if a != 0
 // ---------------------------------------------------------------------------
-inline void ct_scalar_neg_impl(const Scalar* a, Scalar* r) {
+static inline void ct_scalar_neg_impl(const Scalar* a, Scalar* r) {
     const ulong n[4] = { CT_ORDER_N0, CT_ORDER_N1, CT_ORDER_N2, CT_ORDER_N3 };
     ulong tmp[4];
     ct_sub256(n, a->limbs, tmp);
@@ -74,7 +74,7 @@ inline void ct_scalar_neg_impl(const Scalar* a, Scalar* r) {
 // ---------------------------------------------------------------------------
 // CT scalar_half: r = a/2 mod n (branchless)
 // ---------------------------------------------------------------------------
-inline void ct_scalar_half_impl(const Scalar* a, Scalar* r) {
+static inline void ct_scalar_half_impl(const Scalar* a, Scalar* r) {
     ulong odd_mask = ct_bool_to_mask(a->limbs[0] & 1);
     const ulong n[4] = { CT_ORDER_N0, CT_ORDER_N1, CT_ORDER_N2, CT_ORDER_N3 };
     ulong tmp[4];
@@ -90,7 +90,7 @@ inline void ct_scalar_half_impl(const Scalar* a, Scalar* r) {
 // ---------------------------------------------------------------------------
 // CT scalar_mul/sqr: wrap fast-path (Montgomery is data-independent)
 // ---------------------------------------------------------------------------
-inline void ct_scalar_mul_impl(const Scalar* a, const Scalar* b, Scalar* r) {
+static inline void ct_scalar_mul_impl(const Scalar* a, const Scalar* b, Scalar* r) {
     Scalar a2 = *a, b2 = *b;
     for (int i = 0; i < 4; ++i) {
         a2.limbs[i] = ct_value_barrier(a2.limbs[i]);
@@ -99,7 +99,7 @@ inline void ct_scalar_mul_impl(const Scalar* a, const Scalar* b, Scalar* r) {
     scalar_mul_mod_n_impl(&a2, &b2, r);
 }
 
-inline void ct_scalar_sqr_impl(const Scalar* a, Scalar* r) {
+static inline void ct_scalar_sqr_impl(const Scalar* a, Scalar* r) {
     ct_scalar_mul_impl(a, a, r);
 }
 
@@ -107,7 +107,7 @@ inline void ct_scalar_sqr_impl(const Scalar* a, Scalar* r) {
 // CT scalar_inverse: Fermat's little theorem a^(n-2) mod n
 // Fixed-trace: always 256 squares + 256 CT-selected multiplies
 // ---------------------------------------------------------------------------
-inline void ct_scalar_inverse_impl(const Scalar* a, Scalar* r) {
+static inline void ct_scalar_inverse_impl(const Scalar* a, Scalar* r) {
     // n-2 in 4 limbs
     const ulong nm2[4] = {
         CT_ORDER_N0 - 2,
@@ -141,20 +141,20 @@ inline void ct_scalar_inverse_impl(const Scalar* a, Scalar* r) {
 // ---------------------------------------------------------------------------
 // CT scalar predicates (scan ALL limbs, no early exit)
 // ---------------------------------------------------------------------------
-inline ulong ct_scalar_is_zero(const Scalar* a) {
+static inline ulong ct_scalar_is_zero(const Scalar* a) {
     ulong acc = 0;
     for (int i = 0; i < 4; ++i) acc |= a->limbs[i];
     return ct_is_zero_mask(acc);
 }
 
-inline ulong ct_scalar_eq(const Scalar* a, const Scalar* b) {
+static inline ulong ct_scalar_eq(const Scalar* a, const Scalar* b) {
     ulong acc = 0;
     for (int i = 0; i < 4; ++i) acc |= (a->limbs[i] ^ b->limbs[i]);
     return ct_is_zero_mask(acc);
 }
 
 // CT scalar_is_high: returns mask if s > n/2
-inline ulong ct_scalar_is_high(const Scalar* s) {
+static inline ulong ct_scalar_is_high(const Scalar* s) {
     ulong n_half[4] = { CT_HALF_N0, CT_HALF_N1, CT_HALF_N2, CT_HALF_N3 };
     // Compare s > n/2: check if n_half < s
     // Subtract: n_half - s, if borrow then s > n_half
@@ -163,13 +163,13 @@ inline ulong ct_scalar_is_high(const Scalar* s) {
     return ct_is_nonzero_mask(borrow);
 }
 
-inline int ct_scalar_bit(const Scalar* s, int pos) {
+static inline int ct_scalar_bit(const Scalar* s, int pos) {
     int limb_idx = pos >> 6;
     int bit_idx = pos & 63;
     return (int)((s->limbs[limb_idx] >> bit_idx) & 1);
 }
 
-inline int ct_scalar_window(const Scalar* s, int pos, int width) {
+static inline int ct_scalar_window(const Scalar* s, int pos, int width) {
     int val = 0;
     for (int i = 0; i < width; ++i)
         val |= ct_scalar_bit(s, pos + i) << i;
@@ -179,7 +179,7 @@ inline int ct_scalar_window(const Scalar* s, int pos, int width) {
 // ---------------------------------------------------------------------------
 // Low-S normalization: if s > n/2, s = n - s (BIP-62 / BIP-340)
 // ---------------------------------------------------------------------------
-inline void ct_scalar_normalize_low_s(Scalar* s) {
+static inline void ct_scalar_normalize_low_s(Scalar* s) {
     ulong mask = ct_scalar_is_high(s);
     Scalar neg;
     ct_scalar_neg_impl(s, &neg);
@@ -202,7 +202,7 @@ typedef struct {
 #define CT_GLV_G2_0 0xE4437ED6010E8828UL
 #define CT_GLV_G2_1 0x0UL
 
-inline void ct_glv_decompose_impl(const Scalar* k, CTGLVDecompositionOCL* out) {
+static inline void ct_glv_decompose_impl(const Scalar* k, CTGLVDecompositionOCL* out) {
     // Simplified balanced decomposition:
     // k1 = k mod n, k2 = 0 initially, then use endomorphism
     // Full GLV uses lattice reduction, but the critical CT aspect is

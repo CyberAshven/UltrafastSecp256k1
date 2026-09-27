@@ -20,7 +20,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Existing tag to backfill (e.g. v4.6.0)'
+        description: 'Existing tag to backfill (e.g. v4.6.2)'
         required: true
 
 concurrency:
@@ -108,7 +108,7 @@ jobs:
     steps:
       - name: Install build dependencies
         run: |
-          dnf install -y cmake ninja-build gcc-c++ rpm-build git
+          dnf install -y cmake ninja-build gcc-c++ rpm-build git libatomic
 
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         with:
@@ -125,7 +125,9 @@ jobs:
             -DSECP256K1_BUILD_SHARED=ON \
             -DSECP256K1_INSTALL=ON \
             -DSECP256K1_INSTALL_PKGCONFIG=ON \
-            -DSECP256K1_USE_ASM=ON
+            -DSECP256K1_USE_ASM=ON \
+            -DCMAKE_EXE_LINKER_FLAGS=-latomic \
+            -DCMAKE_SHARED_LINKER_FLAGS=-latomic
 
       - name: Build
         run: cmake --build build -j$(nproc)

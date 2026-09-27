@@ -13,7 +13,7 @@
 // ---------------------------------------------------------------------------
 // Helper: CT Jacobian to compressed bytes
 // ---------------------------------------------------------------------------
-inline void ct_jac_to_compressed(const CTJacobianPoint* p, uchar out[33]) {
+static inline void ct_jac_to_compressed(const CTJacobianPoint* p, uchar out[33]) {
     FieldElement px, py;
     ct_jacobian_to_affine(p, &px, &py);
     // Determine prefix: 02 if y even, 03 if y odd
@@ -30,7 +30,7 @@ inline void ct_jac_to_compressed(const CTJacobianPoint* p, uchar out[33]) {
 // ---------------------------------------------------------------------------
 // CT nonce derivation: H(secret || pubkey_compressed || msg || aux)
 // ---------------------------------------------------------------------------
-inline void ct_zk_derive_nonce(const Scalar* secret, const CTJacobianPoint* pubkey,
+static inline void ct_zk_derive_nonce(const Scalar* secret, const CTJacobianPoint* pubkey,
                                const uchar msg[32], const uchar aux[32],
                                Scalar* k_out) {
     uchar sec_bytes[32];
@@ -54,7 +54,7 @@ inline void ct_zk_derive_nonce(const Scalar* secret, const CTJacobianPoint* pubk
 // ---------------------------------------------------------------------------
 // CT Knowledge Proof: proves knowledge of s such that P = s*B
 // ---------------------------------------------------------------------------
-inline int ct_knowledge_prove_impl(
+static inline int ct_knowledge_prove_impl(
     const Scalar* secret,
     const CTJacobianPoint* pubkey,
     const CTJacobianPoint* base,
@@ -118,7 +118,7 @@ inline int ct_knowledge_prove_impl(
 }
 
 // CT Knowledge Proof for generator G
-inline int ct_knowledge_prove_generator_impl(
+static inline int ct_knowledge_prove_generator_impl(
     const Scalar* secret,
     const uchar msg[32],
     const uchar aux[32],
@@ -149,7 +149,7 @@ inline int ct_knowledge_prove_generator_impl(
 // CT DLEQ Proof: proves same discrete log across two bases
 // Proves: x such that P1 = x*G and P2 = x*H
 // ---------------------------------------------------------------------------
-inline int ct_dleq_prove_impl(
+static inline int ct_dleq_prove_impl(
     const Scalar* secret,
     const CTJacobianPoint* base_g,
     const CTJacobianPoint* base_h,
@@ -234,7 +234,7 @@ inline int ct_dleq_prove_impl(
 }
 
 // CT DLEQ for generator G
-inline int ct_dleq_prove_generator_impl(
+static inline int ct_dleq_prove_generator_impl(
     const Scalar* secret,
     const CTJacobianPoint* base_h,
     const CTJacobianPoint* pub_h,
@@ -268,7 +268,7 @@ inline int ct_dleq_prove_generator_impl(
 // Produces a full Bulletproof range proof for a committed value.
 // This is computationally expensive (hundreds of scalar muls) but fully CT.
 // ---------------------------------------------------------------------------
-inline int ct_range_prove_impl(
+static inline int ct_range_prove_impl(
     ulong value,
     const Scalar* blinding,
     const AffinePoint* commitment,

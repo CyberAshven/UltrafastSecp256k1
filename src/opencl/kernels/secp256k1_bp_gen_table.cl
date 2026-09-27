@@ -87,7 +87,7 @@ __kernel void bp_gen_table_init_w4_kernel(
 // =============================================================================
 // 64 windows of 4 bits = 256 doublings + up to 64 mixed additions.
 
-inline void scalar_mul_bp_fixed_w4_impl(
+static inline void scalar_mul_bp_fixed_w4_impl(
     const __global AffinePoint* table,  // 16 entries for this generator
     const Scalar* k,
     JacobianPoint* r)
@@ -211,7 +211,7 @@ __kernel void bp_lut4_init_kernel(
 // k * P = sum_{j=0..63} lut[j][ nibble_j(k) ]
 // Up to 63 mixed additions (skip zero nibbles). No doublings at runtime.
 
-inline void scalar_mul_bp_lut4_impl(
+static inline void scalar_mul_bp_lut4_impl(
     const __global AffinePoint* lut,  // 64*16 = 1024 entries for this generator
     const Scalar* k,
     JacobianPoint* r)

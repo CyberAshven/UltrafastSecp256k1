@@ -21,14 +21,19 @@
 // =============================================================================
 // Forced Inlining
 // =============================================================================
-// NVIDIA's OpenCL compiler (nvoc) treats 'inline' as advisory.
-// __attribute__((always_inline)) forces inlining of the entire field arithmetic
-// call chain (field_mul → comba → reduce), matching CUDA's __forceinline__.
+// OpenCL C follows C99 inline semantics: a plain `inline` definition does NOT
+// provide an external definition. When the compiler (e.g. AMD ROCm) declines
+// to inline a larger helper (field_inv_impl, field_sqr_impl etc.), the call
+// has no symbol to link against → "undefined hidden symbol".
+//
+// NVIDIA (nvoc) is unaffected because we use __attribute__((always_inline)).
+// Solution: `static inline` for non-NVIDIA (TU-local definition always present).
+// We also make the NVIDIA path `static inline` for consistency (no downside).
 #ifdef __NV_CL_C_VERSION
-  #define FORCE_INLINE __attribute__((always_inline)) inline
+  #define FORCE_INLINE __attribute__((always_inline)) static inline
   #define FORCE_INLINE_STATIC __attribute__((always_inline)) static inline
 #else
-  #define FORCE_INLINE inline
+  #define FORCE_INLINE static inline
   #define FORCE_INLINE_STATIC static inline
 #endif
 

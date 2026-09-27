@@ -23,7 +23,7 @@ __constant uint BIP352_SHAREDSECRET_MIDSTATE[8] = {
     0x98fa21faU, 0x4a888523U, 0xbd99daabU, 0xf25e5e0aU
 };
 
-inline void bip352_tagged_sha256_impl(const uchar* data, uint data_len, uchar out[32]) {
+static inline void bip352_tagged_sha256_impl(const uchar* data, uint data_len, uchar out[32]) {
     SHA256Ctx ctx;
     for (int i = 0; i < 8; i++) ctx.h[i] = BIP352_SHAREDSECRET_MIDSTATE[i];
     ctx.buf_len = 0;
@@ -32,7 +32,7 @@ inline void bip352_tagged_sha256_impl(const uchar* data, uint data_len, uchar ou
     sha256_final(&ctx, out);
 }
 
-inline void bip352_shared_secret_input_impl(const JacobianPoint* p, uchar ser[37]) {
+static inline void bip352_shared_secret_input_impl(const JacobianPoint* p, uchar ser[37]) {
     FieldElement z_inv, z_inv2, z_inv3, x_aff, y_aff;
     field_inv_impl(&z_inv, &p->z);
     field_sqr_impl(&z_inv2, &z_inv);
@@ -52,7 +52,7 @@ inline void bip352_shared_secret_input_impl(const JacobianPoint* p, uchar ser[37
     ser[36] = 0;
 }
 
-inline ulong point_prefix64_impl(const JacobianPoint* p) {
+static inline ulong point_prefix64_impl(const JacobianPoint* p) {
     FieldElement z_inv, z_inv2, x_aff;
     field_inv_impl(&z_inv, &p->z);
     field_sqr_impl(&z_inv2, &z_inv);
@@ -73,7 +73,7 @@ inline ulong point_prefix64_impl(const JacobianPoint* p) {
 // instead of the old Jacobian-Jacobian table -- eliminates 6 J-J adds per half,
 // replaces with 7 mixed (J+A) adds and 1 field_inv shared across 8 entries.
 // This matches the quality of scalar_mul_glv_impl in secp256k1_extended.cl.
-inline void scalar_mul_glv_predecomp_impl(
+static inline void scalar_mul_glv_predecomp_impl(
     JacobianPoint* r,
     const AffinePoint* p,
     __constant const BIP352ScanKeyGlv* scan

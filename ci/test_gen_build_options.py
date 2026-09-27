@@ -8,6 +8,12 @@ deterministic renderer behave, and that the committed doc is in sync.
 
 Run: python3 ci/test_gen_build_options.py   (exit 0 = all assertions pass)
 """
+
+# 2026-09-25: switched discovery from os.walk to `git ls-files **/CMakeLists.txt`
+# so that --check is stable in shallow CI clones (no submodules, depth=1) and
+# in workspaces that have untracked dirs (research/, .aiworkhub worktrees, etc.).
+# This eliminates the "BUILD_OPTIONS.md is stale" false failures that were
+# causing Fast CAAS / Doc Gates / Final Verdict red on dev pushes.
 from __future__ import annotations
 
 import shutil

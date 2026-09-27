@@ -15,7 +15,7 @@
 // ---------------------------------------------------------------------------
 // CT ECDSA sign: deterministic (RFC 6979) + constant-time k*G + k^-1
 // ---------------------------------------------------------------------------
-inline int ct_ecdsa_sign_impl(const uchar msg_hash[32], const Scalar* priv,
+static inline int ct_ecdsa_sign_impl(const uchar msg_hash[32], const Scalar* priv,
                               ECDSASignature* sig) {
     // BUG-M1 FIX: reject zero private key before RFC 6979 nonce derivation.
     // Every other signing function checks this; ct_ecdsa_sign_impl was the only
@@ -72,7 +72,7 @@ inline int ct_ecdsa_sign_impl(const uchar msg_hash[32], const Scalar* priv,
 }
 
 // CT ECDSA sign with fault countermeasure (verify after signing)
-inline int ct_ecdsa_sign_verified_impl(const uchar msg_hash[32], const Scalar* priv,
+static inline int ct_ecdsa_sign_verified_impl(const uchar msg_hash[32], const Scalar* priv,
                                        ECDSASignature* sig) {
     int ok = ct_ecdsa_sign_impl(msg_hash, priv, sig);
     if (!ok) return 0;
@@ -104,7 +104,7 @@ typedef struct {
     FieldElement pub_y;   // full y for internal use
 } CTSchnorrKeypairOCL;
 
-inline int ct_schnorr_keypair_create_impl(const Scalar* priv,
+static inline int ct_schnorr_keypair_create_impl(const Scalar* priv,
                                           CTSchnorrKeypairOCL* kp) {
     // CT: d*G
     CTJacobianPoint P;
@@ -130,7 +130,7 @@ inline int ct_schnorr_keypair_create_impl(const Scalar* priv,
 // ---------------------------------------------------------------------------
 // CT Schnorr sign (BIP-340)
 // ---------------------------------------------------------------------------
-inline int ct_schnorr_sign_impl(const Scalar* priv, const uchar msg[32],
+static inline int ct_schnorr_sign_impl(const Scalar* priv, const uchar msg[32],
                                 const uchar aux_rand[32],
                                 uchar sig_out[64]) {
     // Create keypair with CT
@@ -219,7 +219,7 @@ inline int ct_schnorr_sign_impl(const Scalar* priv, const uchar msg[32],
 }
 
 // CT Schnorr sign with fault countermeasure
-inline int ct_schnorr_sign_verified_impl(const Scalar* priv, const uchar msg[32],
+static inline int ct_schnorr_sign_verified_impl(const Scalar* priv, const uchar msg[32],
                                          const uchar aux_rand[32],
                                          uchar sig_out[64]) {
     int ok = ct_schnorr_sign_impl(priv, msg, aux_rand, sig_out);
@@ -251,7 +251,7 @@ inline int ct_schnorr_sign_verified_impl(const Scalar* priv, const uchar msg[32]
 }
 
 // CT public key derivation
-inline void ct_schnorr_pubkey_impl(const Scalar* priv, FieldElement* pub_x) {
+static inline void ct_schnorr_pubkey_impl(const Scalar* priv, FieldElement* pub_x) {
     CTJacobianPoint P;
     ct_generator_mul_impl(priv, &P);
     FieldElement py;

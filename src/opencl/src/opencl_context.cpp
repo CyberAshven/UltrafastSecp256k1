@@ -433,7 +433,7 @@ typedef struct { FieldElement x; FieldElement y; FieldElement z; uint infinity; 
         : "l"((ulong)(a)), "l"((ulong)(b)) \
     )
 
-inline void mul_256_512_cl(const ulong* a, const ulong* b, ulong* r) {
+static inline void mul_256_512_cl(const ulong* a, const ulong* b, ulong* r) {
     ulong a0=a[0],a1=a[1],a2=a[2],a3=a[3];
     ulong b0=b[0],b1=b[1],b2=b[2],b3=b[3];
     ulong c0=0,c1=0,c2=0;
@@ -453,7 +453,7 @@ inline void mul_256_512_cl(const ulong* a, const ulong* b, ulong* r) {
     r[6]=c0; r[7]=c1;
 }
 
-inline void sqr_256_512_cl(const ulong* a, ulong* r) {
+static inline void sqr_256_512_cl(const ulong* a, ulong* r) {
     ulong a0=a[0],a1=a[1],a2=a[2],a3=a[3];
     ulong c0=0,c1=0,c2=0;
     PTX_MAD_ACC(c0,c1,c2,a0,a0);
@@ -472,7 +472,7 @@ inline void sqr_256_512_cl(const ulong* a, ulong* r) {
     r[6]=c0; r[7]=c1;
 }
 
-inline void reduce_512_to_256_cl(ulong* t, FieldElement* r) {
+static inline void reduce_512_to_256_cl(ulong* t, FieldElement* r) {
     ulong t0=t[0],t1=t[1],t2=t[2],t3=t[3],t4=t[4],t5=t[5],t6=t[6],t7=t[7];
     ulong a0,a1,a2,a3,a4;
     asm volatile("mul.lo.u64 %0, %5, 977;\n\t" "mul.hi.u64 %1, %5, 977;\n\t"
@@ -516,23 +516,23 @@ inline void reduce_512_to_256_cl(ulong* t, FieldElement* r) {
 #endif // __NV_CL_C_VERSION
 // =============================================================================
 
-inline ulong2 mul64_full(ulong a, ulong b) {
+static inline ulong2 mul64_full(ulong a, ulong b) {
     return (ulong2)(a * b, mul_hi(a, b));
 }
 
-inline ulong add_with_carry(ulong a, ulong b, ulong ci, ulong* co) {
+static inline ulong add_with_carry(ulong a, ulong b, ulong ci, ulong* co) {
     ulong s = a + b; ulong c1 = (s < a) ? 1UL : 0UL;
     s += ci; ulong c2 = (s < ci) ? 1UL : 0UL;
     *co = c1 + c2; return s;
 }
 
-inline ulong sub_with_borrow(ulong a, ulong b, ulong bi, ulong* bo) {
+static inline ulong sub_with_borrow(ulong a, ulong b, ulong bi, ulong* bo) {
     ulong d = a - b; ulong b1 = (a < b) ? 1UL : 0UL;
     ulong t = d; d -= bi; ulong b2 = (t < bi) ? 1UL : 0UL;
     *bo = b1 + b2; return d;
 }
 
-inline void field_reduce(FieldElement* r, const ulong* a8) {
+static inline void field_reduce(FieldElement* r, const ulong* a8) {
     ulong carry = 0, c1; ulong temp[5]; ulong2 prod;
     prod = mul64_full(SECP256K1_K, a8[4]); temp[0] = a8[0] + prod.x; carry = (temp[0] < a8[0]) ? 1UL : 0UL; carry += prod.y;
     prod = mul64_full(SECP256K1_K, a8[5]); temp[1] = a8[1] + carry; c1 = (temp[1] < carry) ? 1UL : 0UL; temp[1] += prod.x; c1 += (temp[1] < prod.x) ? 1UL : 0UL; carry = c1 + prod.y;
@@ -551,7 +551,7 @@ inline void field_reduce(FieldElement* r, const ulong* a8) {
     r->limbs[3] = (diff[3] & mask) | (temp[3] & ~mask);
 }
 
-inline void field_add_impl(FieldElement* r, const FieldElement* a, const FieldElement* b) {
+static inline void field_add_impl(FieldElement* r, const FieldElement* a, const FieldElement* b) {
 #ifdef __NV_CL_C_VERSION
     ulong a0=a->limbs[0],a1=a->limbs[1],a2=a->limbs[2],a3=a->limbs[3];
     ulong b0=b->limbs[0],b1=b->limbs[1],b2=b->limbs[2],b3=b->limbs[3];
@@ -590,7 +590,7 @@ inline void field_add_impl(FieldElement* r, const FieldElement* a, const FieldEl
 #endif
 }
 
-inline void field_sub_impl(FieldElement* r, const FieldElement* a, const FieldElement* b) {
+static inline void field_sub_impl(FieldElement* r, const FieldElement* a, const FieldElement* b) {
 #ifdef __NV_CL_C_VERSION
     ulong a0=a->limbs[0],a1=a->limbs[1],a2=a->limbs[2],a3=a->limbs[3];
     ulong b0=b->limbs[0],b1=b->limbs[1],b2=b->limbs[2],b3=b->limbs[3];
@@ -622,7 +622,7 @@ inline void field_sub_impl(FieldElement* r, const FieldElement* a, const FieldEl
 #endif
 }
 
-inline void field_mul_impl(FieldElement* r, const FieldElement* a, const FieldElement* b) {
+static inline void field_mul_impl(FieldElement* r, const FieldElement* a, const FieldElement* b) {
 #ifdef __NV_CL_C_VERSION
     ulong t[8]; mul_256_512_cl(a->limbs, b->limbs, t); reduce_512_to_256_cl(t, r);
 #else
@@ -641,7 +641,7 @@ inline void field_mul_impl(FieldElement* r, const FieldElement* a, const FieldEl
 #endif
 }
 
-inline void field_sqr_impl(FieldElement* r, const FieldElement* a) {
+static inline void field_sqr_impl(FieldElement* r, const FieldElement* a) {
 #ifdef __NV_CL_C_VERSION
     ulong t[8]; sqr_256_512_cl(a->limbs, t); reduce_512_to_256_cl(t, r);
 #else
@@ -649,23 +649,23 @@ inline void field_sqr_impl(FieldElement* r, const FieldElement* a) {
 #endif
 }
 
-inline void field_sqr_n_impl(FieldElement* r, int n) {
+static inline void field_sqr_n_impl(FieldElement* r, int n) {
     for (int i = 0; i < n; i++) field_sqr_impl(r, r);
 }
 
-inline int field_is_zero_impl(const FieldElement* a) {
+static inline int field_is_zero_impl(const FieldElement* a) {
     return (a->limbs[0] | a->limbs[1] | a->limbs[2] | a->limbs[3]) == 0;
 }
 
-inline void field_set_zero_impl(FieldElement* a) {
+static inline void field_set_zero_impl(FieldElement* a) {
     a->limbs[0] = 0; a->limbs[1] = 0; a->limbs[2] = 0; a->limbs[3] = 0;
 }
 
-inline void field_set_one_impl(FieldElement* a) {
+static inline void field_set_one_impl(FieldElement* a) {
     a->limbs[0] = 1; a->limbs[1] = 0; a->limbs[2] = 0; a->limbs[3] = 0;
 }
 
-inline void field_inv_impl(FieldElement* r, const FieldElement* a) {
+static inline void field_inv_impl(FieldElement* r, const FieldElement* a) {
     FieldElement x2,x3,x6,x12,x24,x48,x96,x192,x7,x31,x223,x5,x11,x22,t;
     field_sqr_impl(&x2, a); field_mul_impl(&x2, &x2, a);
     field_sqr_impl(&x3, &x2); field_mul_impl(&x3, &x3, a);
@@ -777,12 +777,12 @@ __kernel void field_inv(__global const FieldElement* a, __global FieldElement* r
 R"KERNEL(
 
 // Point operations - simplified versions
-inline int point_is_infinity(const JacobianPoint* p) { return p->infinity || ((p->z.limbs[0] | p->z.limbs[1] | p->z.limbs[2] | p->z.limbs[3]) == 0); }
-inline void point_set_infinity(JacobianPoint* p) { p->x.limbs[0]=0; p->x.limbs[1]=0; p->x.limbs[2]=0; p->x.limbs[3]=0; p->y.limbs[0]=1; p->y.limbs[1]=0; p->y.limbs[2]=0; p->y.limbs[3]=0; p->z.limbs[0]=0; p->z.limbs[1]=0; p->z.limbs[2]=0; p->z.limbs[3]=0; p->infinity=1; }
+static inline int point_is_infinity(const JacobianPoint* p) { return p->infinity || ((p->z.limbs[0] | p->z.limbs[1] | p->z.limbs[2] | p->z.limbs[3]) == 0); }
+static inline void point_set_infinity(JacobianPoint* p) { p->x.limbs[0]=0; p->x.limbs[1]=0; p->x.limbs[2]=0; p->x.limbs[3]=0; p->y.limbs[0]=1; p->y.limbs[1]=0; p->y.limbs[2]=0; p->y.limbs[3]=0; p->z.limbs[0]=0; p->z.limbs[1]=0; p->z.limbs[2]=0; p->z.limbs[3]=0; p->infinity=1; }
 
 // Point doubling: dbl-2007-a for a=0 (secp256k1)
 // CUDA-matched: 3 temps, write directly into r
-inline void point_double_impl(JacobianPoint* r, const JacobianPoint* p) {
+static inline void point_double_impl(JacobianPoint* r, const JacobianPoint* p) {
     if (point_is_infinity(p)) { point_set_infinity(r); return; }
     if ((p->y.limbs[0] | p->y.limbs[1] | p->y.limbs[2] | p->y.limbs[3]) == 0) {
         point_set_infinity(r); return;
@@ -836,7 +836,7 @@ inline void point_double_impl(JacobianPoint* r, const JacobianPoint* p) {
 }
 
 // Mixed addition: Jacobian + Affine -> Jacobian (CUDA-matched, write directly to r)
-inline void point_add_mixed_impl(JacobianPoint* r, const JacobianPoint* p, const AffinePoint* q) {
+static inline void point_add_mixed_impl(JacobianPoint* r, const JacobianPoint* p, const AffinePoint* q) {
     if (point_is_infinity(p)) { r->x = q->x; r->y = q->y; r->z.limbs[0]=1; r->z.limbs[1]=0; r->z.limbs[2]=0; r->z.limbs[3]=0; r->infinity=0; return; }
     FieldElement z1z1, u2, s2, h, hh, i, j, rr, v, t1;
     field_sqr_impl(&z1z1, &p->z);
@@ -869,7 +869,7 @@ inline void point_add_mixed_impl(JacobianPoint* r, const JacobianPoint* p, const
     r->infinity = 0;
 }
 
-inline void point_add_impl(JacobianPoint* r, const JacobianPoint* p, const JacobianPoint* q) {
+static inline void point_add_impl(JacobianPoint* r, const JacobianPoint* p, const JacobianPoint* q) {
     if (point_is_infinity(p)) { *r = *q; return; }
     if (point_is_infinity(q)) { *r = *p; return; }
     FieldElement U1,U2,S1,S2,H,I,J,rr,V,X3,Y3,Z3,Z1Z1,Z2Z2,t1,t2;
@@ -890,7 +890,7 @@ inline void point_add_impl(JacobianPoint* r, const JacobianPoint* p, const Jacob
 // =============================================================================
 // Field negation: r = p - a (direct, avoids creating zero + field_sub overhead)
 // =============================================================================
-inline void field_neg_impl(FieldElement* r, const FieldElement* a) {
+static inline void field_neg_impl(FieldElement* r, const FieldElement* a) {
     ulong a0=a->limbs[0],a1=a->limbs[1],a2=a->limbs[2],a3=a->limbs[3];
     if ((a0|a1|a2|a3) == 0) { r->limbs[0]=0;r->limbs[1]=0;r->limbs[2]=0;r->limbs[3]=0; return; }
 #ifdef __NV_CL_C_VERSION
@@ -910,7 +910,7 @@ inline void field_neg_impl(FieldElement* r, const FieldElement* a) {
 #endif
 }
 
-inline int scalar_is_zero_cl(const Scalar* s) {
+static inline int scalar_is_zero_cl(const Scalar* s) {
     return (s->limbs[0] | s->limbs[1] | s->limbs[2] | s->limbs[3]) == 0;
 }
 
@@ -952,7 +952,7 @@ inline int scalar_is_zero_cl(const Scalar* s) {
 #define GLV_MB2_3 0xFFFFFFFFFFFFFFFFUL
 
 // Conditional subtract n (branchless)
-inline void scalar_cond_sub_n_cl(Scalar* r) {
+static inline void scalar_cond_sub_n_cl(Scalar* r) {
     ulong n[4] = { ORDER_N0, ORDER_N1, ORDER_N2, ORDER_N3 };
     ulong borrow = 0, tmp[4];
     for (int i = 0; i < 4; i++) tmp[i] = sub_with_borrow(r->limbs[i], n[i], borrow, &borrow);
@@ -960,7 +960,7 @@ inline void scalar_cond_sub_n_cl(Scalar* r) {
     for (int i = 0; i < 4; i++) r->limbs[i] = (tmp[i] & mask) | (r->limbs[i] & ~mask);
 }
 
-inline void scalar_add_mod_n_cl(const Scalar* a, const Scalar* b, Scalar* r) {
+static inline void scalar_add_mod_n_cl(const Scalar* a, const Scalar* b, Scalar* r) {
     ulong carry = 0;
     for (int i = 0; i < 4; i++) r->limbs[i] = add_with_carry(a->limbs[i], b->limbs[i], carry, &carry);
     if (carry) {
@@ -970,7 +970,7 @@ inline void scalar_add_mod_n_cl(const Scalar* a, const Scalar* b, Scalar* r) {
     } else { scalar_cond_sub_n_cl(r); }
 }
 
-inline void scalar_sub_mod_n_cl(const Scalar* a, const Scalar* b, Scalar* r) {
+static inline void scalar_sub_mod_n_cl(const Scalar* a, const Scalar* b, Scalar* r) {
     ulong borrow = 0;
     for (int i = 0; i < 4; i++) r->limbs[i] = sub_with_borrow(a->limbs[i], b->limbs[i], borrow, &borrow);
     if (borrow) {
@@ -980,7 +980,7 @@ inline void scalar_sub_mod_n_cl(const Scalar* a, const Scalar* b, Scalar* r) {
     }
 }
 
-inline void scalar_negate_cl(const Scalar* a, Scalar* r) {
+static inline void scalar_negate_cl(const Scalar* a, Scalar* r) {
     ulong n[4] = { ORDER_N0, ORDER_N1, ORDER_N2, ORDER_N3 };
     int is_zero = scalar_is_zero_cl(a);
     ulong borrow = 0;
@@ -989,7 +989,7 @@ inline void scalar_negate_cl(const Scalar* a, Scalar* r) {
 }
 
 // Scalar mul mod n (schoolbook 4x4 + NC reduction)
-inline void scalar_mul_mod_n_cl(const Scalar* a, const Scalar* b, Scalar* r) {
+static inline void scalar_mul_mod_n_cl(const Scalar* a, const Scalar* b, Scalar* r) {
     ulong NC[3] = { NC0, NC1, NC2 };
     ulong prod[8] = {0,0,0,0,0,0,0,0};
     for (int i = 0; i < 4; i++) {
@@ -1046,7 +1046,7 @@ inline void scalar_mul_mod_n_cl(const Scalar* a, const Scalar* b, Scalar* r) {
 R"KERNEL(
 
 // Scalar bit length (uses clz intrinsic -- single instruction on GPU)
-inline int scalar_bitlen_cl(const Scalar* s) {
+static inline int scalar_bitlen_cl(const Scalar* s) {
     for (int i = 3; i >= 0; i--) {
         if (s->limbs[i] != 0) return i * 64 + 64 - (int)clz(s->limbs[i]);
     }
@@ -1056,7 +1056,7 @@ inline int scalar_bitlen_cl(const Scalar* s) {
 // (a * b) >> 384 with rounding (for GLV decomposition)
 #ifdef __NV_CL_C_VERSION
 // 32-bit Comba: avoids INT64 multiply (64x throughput gain on consumer NVIDIA)
-inline void mul_shift_384_cl(const ulong a[4], const ulong b[4], ulong result[4]) {
+static inline void mul_shift_384_cl(const ulong a[4], const ulong b[4], ulong result[4]) {
     uint al[8], bl[8];
     for (int i = 0; i < 4; i++) {
         al[2*i]   = (uint)a[i];        al[2*i+1] = (uint)(a[i] >> 32);
@@ -1098,7 +1098,7 @@ inline void mul_shift_384_cl(const ulong a[4], const ulong b[4], ulong result[4]
 }
 #else
 // Portable 64-bit version for non-NVIDIA OpenCL
-inline void mul_shift_384_cl(const ulong a[4], const ulong b[4], ulong result[4]) {
+static inline void mul_shift_384_cl(const ulong a[4], const ulong b[4], ulong result[4]) {
     ulong prod[8] = {0,0,0,0,0,0,0,0};
     for (int i = 0; i < 4; i++) {
         ulong carry = 0;
@@ -1116,7 +1116,7 @@ inline void mul_shift_384_cl(const ulong a[4], const ulong b[4], ulong result[4]
 #endif
 
 // GLV decomposition: k = k1 + k2*lambda mod n, |k1|,|k2| ~ 128 bits
-inline void glv_decompose_cl(const Scalar* k, Scalar* k1, Scalar* k2, int* k1_neg, int* k2_neg) {
+static inline void glv_decompose_cl(const Scalar* k, Scalar* k1, Scalar* k2, int* k1_neg, int* k2_neg) {
     ulong g1[4] = { GLV_G1_0, GLV_G1_1, GLV_G1_2, GLV_G1_3 };
     ulong g2[4] = { GLV_G2_0, GLV_G2_1, GLV_G2_2, GLV_G2_3 };
     ulong c1_l[4], c2_l[4];
@@ -1160,13 +1160,13 @@ inline void glv_decompose_cl(const Scalar* k, Scalar* k1, Scalar* k2, int* k1_ne
     *k1_neg = k1_is_neg; *k2_neg = k2_is_neg;
 }
 
-inline void point_from_affine(JacobianPoint* j, const AffinePoint* a) {
+static inline void point_from_affine(JacobianPoint* j, const AffinePoint* a) {
     j->x = a->x; j->y = a->y;
     j->z.limbs[0] = 1UL; j->z.limbs[1] = 0UL; j->z.limbs[2] = 0UL; j->z.limbs[3] = 0UL;
     j->infinity = 0;
 }
 
-inline void point_add_mixed_h_impl(JacobianPoint* r, const JacobianPoint* p,
+static inline void point_add_mixed_h_impl(JacobianPoint* r, const JacobianPoint* p,
                                    const AffinePoint* q, FieldElement* h_out) {
     h_out->limbs[0] = 1UL; h_out->limbs[1] = 0UL; h_out->limbs[2] = 0UL; h_out->limbs[3] = 0UL;
     if (point_is_infinity(p)) { point_from_affine(r, q); return; }
@@ -1201,7 +1201,7 @@ inline void point_add_mixed_h_impl(JacobianPoint* r, const JacobianPoint* p,
     r->x = X3; r->y = Y3; r->z = Z3; r->infinity = 0;
 }
 
-inline void build_wnaf_table_zr_cl(const AffinePoint* base, AffinePoint table[8], FieldElement* globalz) {
+static inline void build_wnaf_table_zr_cl(const AffinePoint* base, AffinePoint table[8], FieldElement* globalz) {
     JacobianPoint base_jac;
     point_from_affine(&base_jac, base);
 
@@ -1259,7 +1259,7 @@ inline void build_wnaf_table_zr_cl(const AffinePoint* base, AffinePoint table[8]
     }
 }
 
-inline void derive_endo_table_cl(const AffinePoint table[8], AffinePoint endo_table[8], int negate_y) {
+static inline void derive_endo_table_cl(const AffinePoint table[8], AffinePoint endo_table[8], int negate_y) {
     FieldElement beta;
     beta.limbs[0]=GLV_BETA0; beta.limbs[1]=GLV_BETA1;
     beta.limbs[2]=GLV_BETA2; beta.limbs[3]=GLV_BETA3;
@@ -1298,7 +1298,7 @@ static inline void scalar_to_wnaf(const Scalar* k, int wnaf[130]) {
 /* GLV scalar mul — Shamir w=1 interleaved binary scan.
  * Replaces the wNAF-5 path: no 8-point table, no Z-correction,
  * ~same 130 doublings but only 2 affine operands → far lower register pressure. */
-inline void scalar_mul_glv_cl(JacobianPoint* r, const Scalar* k, const AffinePoint* base) {
+static inline void scalar_mul_glv_cl(JacobianPoint* r, const Scalar* k, const AffinePoint* base) {
     if (scalar_is_zero_cl(k)) { point_set_infinity(r); return; }
 
     Scalar k1, k2; int k1_neg, k2_neg;
@@ -1356,11 +1356,11 @@ inline void scalar_mul_glv_cl(JacobianPoint* r, const Scalar* k, const AffinePoi
 #define GY2 0x5DA4FBFC0E1108A8UL
 #define GY3 0x483ADA7726A3C465UL
 
-inline void get_generator(AffinePoint* g) { g->x.limbs[0]=GX0; g->x.limbs[1]=GX1; g->x.limbs[2]=GX2; g->x.limbs[3]=GX3; g->y.limbs[0]=GY0; g->y.limbs[1]=GY1; g->y.limbs[2]=GY2; g->y.limbs[3]=GY3; }
+static inline void get_generator(AffinePoint* g) { g->x.limbs[0]=GX0; g->x.limbs[1]=GX1; g->x.limbs[2]=GX2; g->x.limbs[3]=GX3; g->y.limbs[0]=GY0; g->y.limbs[1]=GY1; g->y.limbs[2]=GY2; g->y.limbs[3]=GY3; }
 
 // Precomputed generator multiples: get_gen_entry(pt, idx) returns (idx+1)*G
-// Using inline function instead of __constant array for OpenCL compiler compatibility
-inline void get_gen_entry(AffinePoint* pt, int idx) {
+// Using static inline function instead of __constant array for OpenCL compiler compatibility
+static inline void get_gen_entry(AffinePoint* pt, int idx) {
     switch(idx) {
     case 0: pt->x.limbs[0]=0x59f2815b16f81798UL;pt->x.limbs[1]=0x029bfcdb2dce28d9UL;pt->x.limbs[2]=0x55a06295ce870b07UL;pt->x.limbs[3]=0x79be667ef9dcbbacUL;pt->y.limbs[0]=0x9c47d08ffb10d4b8UL;pt->y.limbs[1]=0xfd17b448a6855419UL;pt->y.limbs[2]=0x5da4fbfc0e1108a8UL;pt->y.limbs[3]=0x483ada7726a3c465UL;break;
     case 1: pt->x.limbs[0]=0xabac09b95c709ee5UL;pt->x.limbs[1]=0x5c778e4b8cef3ca7UL;pt->x.limbs[2]=0x3045406e95c07cd8UL;pt->x.limbs[3]=0xc6047f9441ed7d6dUL;pt->y.limbs[0]=0x236431a950cfe52aUL;pt->y.limbs[1]=0xf7f632653266d0e1UL;pt->y.limbs[2]=0xa3c58419466ceaeeUL;pt->y.limbs[3]=0x1ae168fea63dc339UL;break;
@@ -1380,14 +1380,14 @@ inline void get_gen_entry(AffinePoint* pt, int idx) {
     }
 }
 
-inline int get_window_4bit(const Scalar* s, int pos) {
+static inline int get_window_4bit(const Scalar* s, int pos) {
     int bp = pos * 4, li = bp >> 6, sh = bp & 63;
     ulong v = s->limbs[li] >> sh;
     if (sh > 60 && li < 3) v |= s->limbs[li+1] << (64 - sh);
     return (int)(v & 0xFUL);
 }
 
-inline void scalar_mul_generator_glv_impl(JacobianPoint* r, const Scalar* k) {
+static inline void scalar_mul_generator_glv_impl(JacobianPoint* r, const Scalar* k) {
     if ((k->limbs[0]|k->limbs[1]|k->limbs[2]|k->limbs[3]) == 0) {
         point_set_infinity(r);
         return;
@@ -1446,7 +1446,7 @@ __kernel void point_add(__global const JacobianPoint* p, __global const Jacobian
     JacobianPoint r; point_add_impl(&r, &p_local, &q_local); results[gid] = r;
 }
 
-inline void scalar_mul_impl(JacobianPoint* r, const Scalar* k, const AffinePoint* p) {
+static inline void scalar_mul_impl(JacobianPoint* r, const Scalar* k, const AffinePoint* p) {
     if ((k->limbs[0]|k->limbs[1]|k->limbs[2]|k->limbs[3]) == 0) { point_set_infinity(r); return; }
     scalar_mul_glv_cl(r, k, p);
 }
@@ -1530,7 +1530,7 @@ R"KERNEL(
 // affine_add_impl: P + Q -> R, all affine (2M + 1S + inv)
 // OCL-H-03: branchlessly handles H == 0 (P.x == Q.x degenerate case);
 // returns (0,0) identity sentinel when H == 0 instead of wrong garbage values.
-inline void affine_add_impl(AffinePoint* r,
+static inline void affine_add_impl(AffinePoint* r,
                              const FieldElement* px, const FieldElement* py,
                              const FieldElement* qx, const FieldElement* qy) {
     FieldElement h, rr, t, lam;
@@ -1559,7 +1559,7 @@ inline void affine_add_impl(AffinePoint* r,
 }
 
 // affine_add_lambda_impl: with pre-inverted H (2M + 1S)
-inline void affine_add_lambda_impl(AffinePoint* r,
+static inline void affine_add_lambda_impl(AffinePoint* r,
                                     const FieldElement* px, const FieldElement* py,
                                     const FieldElement* qx, const FieldElement* qy,
                                     const FieldElement* h_inv) {
@@ -1575,7 +1575,7 @@ inline void affine_add_lambda_impl(AffinePoint* r,
 }
 
 // affine_add_x_only_impl: X-only with pre-inverted H (1M + 1S)
-inline void affine_add_x_only_impl(FieldElement* rx,
+static inline void affine_add_x_only_impl(FieldElement* rx,
                                     const FieldElement* px, const FieldElement* py,
                                     const FieldElement* qx, const FieldElement* qy,
                                     const FieldElement* h_inv) {
@@ -1588,7 +1588,7 @@ inline void affine_add_x_only_impl(FieldElement* rx,
 }
 
 // jacobian_to_affine_convert_impl: single point
-inline void jacobian_to_affine_convert_impl(AffinePoint* r,
+static inline void jacobian_to_affine_convert_impl(AffinePoint* r,
                                              const FieldElement* x,
                                              const FieldElement* y,
                                              const FieldElement* z) {
@@ -2653,11 +2653,11 @@ std::vector<std::pair<std::string, std::vector<DeviceInfo>>> enumerate_devices()
         std::vector<DeviceInfo> devices;
 
         cl_uint num_devices = 0;
-        clGetDeviceIDs(platforms[i], CL_DEVICE_TYPE_ALL, 0, nullptr, &num_devices);
+        clGetDeviceIDs(platforms[i], CL_DEVICE_TYPE_GPU, 0, nullptr, &num_devices);
 
         if (num_devices > 0) {
             std::vector<cl_device_id> device_ids(num_devices);
-            clGetDeviceIDs(platforms[i], CL_DEVICE_TYPE_ALL, num_devices, device_ids.data(), nullptr);
+            clGetDeviceIDs(platforms[i], CL_DEVICE_TYPE_GPU, num_devices, device_ids.data(), nullptr);
 
             for (cl_uint j = 0; j < num_devices; j++) {
                 DeviceInfo info;

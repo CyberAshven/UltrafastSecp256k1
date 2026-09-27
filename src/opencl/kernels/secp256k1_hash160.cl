@@ -48,15 +48,15 @@ __constant uint SHA256_K[64] = {
 // SHA-256 Helpers
 // =============================================================================
 
-inline uint hash_rotr32(uint x, uint n) { return (x >> n) | (x << (32 - n)); }
-inline uint hash_rotl32(uint x, uint n) { return (x << n) | (x >> (32 - n)); }
+static inline uint hash_rotr32(uint x, uint n) { return (x >> n) | (x << (32 - n)); }
+static inline uint hash_rotl32(uint x, uint n) { return (x << n) | (x >> (32 - n)); }
 
 // =============================================================================
 // One-shot SHA-256 (up to 128 bytes input, max 2 blocks)
 // =============================================================================
 // Output: 32 bytes, big-endian (standard SHA-256 byte order)
 
-inline void sha256_oneshot_impl(const uchar* data, uint len, uchar out[32]) {
+static inline void sha256_oneshot_impl(const uchar* data, uint len, uchar out[32]) {
     uint h0 = 0x6a09e667U;
     uint h1 = 0xbb67ae85U;
     uint h2 = 0x3c6ef372U;
@@ -182,7 +182,7 @@ __constant uint RIPEMD_K2[5] = {
 // RIPEMD-160 Round Function Selector (5 boolean functions)
 // =============================================================================
 
-inline uint ripemd_f_impl(int j, uint x, uint y, uint z) {
+static inline uint ripemd_f_impl(int j, uint x, uint y, uint z) {
     if (j <= 15) return x ^ y ^ z;           // XOR
     if (j <= 31) return (x & y) | (~x & z);  // IF
     if (j <= 47) return (x | ~y) ^ z;        // ONX
@@ -196,7 +196,7 @@ inline uint ripemd_f_impl(int j, uint x, uint y, uint z) {
 // Input: 32 bytes (SHA-256 digest)
 // Output: 20 bytes, little-endian (standard RIPEMD-160 byte order)
 
-inline void ripemd160_32_impl(const uchar data[32], uchar out[20]) {
+static inline void ripemd160_32_impl(const uchar data[32], uchar out[20]) {
     // Pad to 64-byte block: data ∥ 0x80 ∥ zeros ∥ LE-bitlen
     uchar block[64];
     for (int i = 0; i < 64; ++i) block[i] = 0;
@@ -271,7 +271,7 @@ inline void ripemd160_32_impl(const uchar data[32], uchar out[20]) {
 // Input: pubkey (33 or 65 bytes)
 // Output: 20 bytes
 
-inline void hash160_pubkey_impl(const uchar* pubkey, uint pubkey_len, uchar out[20]) {
+static inline void hash160_pubkey_impl(const uchar* pubkey, uint pubkey_len, uchar out[20]) {
     uchar sha[32];
     sha256_oneshot_impl(pubkey, pubkey_len, sha);
     ripemd160_32_impl(sha, out);

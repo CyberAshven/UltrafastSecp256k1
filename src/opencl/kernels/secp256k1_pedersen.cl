@@ -13,7 +13,7 @@
 #define SECP256K1_PEDERSEN_CL
 
 // -- lift_x to curve point with even y ----------------------------------------
-inline int lift_x_even_impl(const FieldElement* x, AffinePoint* out) {
+static inline int lift_x_even_impl(const FieldElement* x, AffinePoint* out) {
     FieldElement x2, x3, y2, y;
     field_sqr_impl(&x2, x);
     field_mul_impl(&x3, &x2, x);
@@ -56,7 +56,7 @@ inline int lift_x_even_impl(const FieldElement* x, AffinePoint* out) {
 }
 
 // -- Hash to point (try-and-increment) ----------------------------------------
-inline int hash_to_point_increment_impl(const FieldElement* x_in, AffinePoint* out) {
+static inline int hash_to_point_increment_impl(const FieldElement* x_in, AffinePoint* out) {
     FieldElement x = *x_in;
     FieldElement one;
     for (int i = 0; i < 4; ++i) one.limbs[i] = 0;
@@ -71,7 +71,7 @@ inline int hash_to_point_increment_impl(const FieldElement* x_in, AffinePoint* o
 }
 
 // -- Single commitment: C = v*H + r*G ----------------------------------------
-inline void pedersen_commit_impl(const Scalar* value,
+static inline void pedersen_commit_impl(const Scalar* value,
                                   const Scalar* blinding,
                                   const AffinePoint* H,
                                   JacobianPoint* out)

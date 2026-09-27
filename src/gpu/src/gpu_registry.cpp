@@ -38,10 +38,13 @@ static constexpr uint32_t s_backend_ids[] = {
 #if defined(SECP256K1_HAVE_CUDA)
     1, /* CUDA */
 #endif
+#if defined(__APPLE__) && defined(SECP256K1_HAVE_METAL)
+    3, /* Metal preferred on Apple */
+#endif
 #if defined(SECP256K1_HAVE_OPENCL)
     2, /* OpenCL */
 #endif
-#if defined(SECP256K1_HAVE_METAL)
+#if !defined(__APPLE__) && defined(SECP256K1_HAVE_METAL)
     3, /* Metal */
 #endif
     0  /* sentinel (always present so array is never empty) */

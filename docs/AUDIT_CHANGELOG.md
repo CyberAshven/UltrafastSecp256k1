@@ -1,5 +1,52 @@
 # Audit Changelog
 
+## 2026-09-26 - GH-436 static-inline guard was vacuous; OpenCL FROST program did not build (#440)
+
+`regression_opencl_static_inline_link`, registered on 2026-09-25 as the GH-436
+regression guard, printed nine file names and returned 0 unconditionally, so
+the entry below was wrong to say it would have gone red on the pre-fix sources.
+It now enumerates every `src/opencl/kernels/*.cl` file (26 today) plus the
+`R"KERNEL(...)KERNEL"` source embedded in `src/opencl/src/opencl_context.cpp`,
+flags any non-`static` `inline` declaration and any `#define FORCE_INLINE`
+without `static`, and fails when an input cannot be read. A negative control
+(SIL-4) checks that the scanner flags `inline void f(void)` and
+`#define FORCE_INLINE inline` and leaves `static inline`, `FORCE_INLINE` uses and
+commented-out code alone. Pointed at the v4.6.0 kernel sources it fails with 288
+offenders; on current `dev` it passes. The standalone CTest
+`regression_opencl_kernel_closure` now runs both modules in the file.
+
+It is a source scan, not a vendor build. `src/bch/opencl` and `src/ltc/opencl`
+are out of scope; 12 plain-`inline` definitions remain there.
+
+PR #440 fixed `secp256k1_frost.cl`, which passed `__global` scalar pointers to
+the private-array parameter of `scalar_from_bytes_impl`. Measured on an RTX 5060
+Ti with the NVIDIA OpenCL driver, `clBuildProgram` returned -11
+(`CL_BUILD_PROGRAM_FAILURE`) before the change and 0 after it; clang 18's OpenCL
+front end (`-cl-std=CL1.2`) reported the same three address-space errors before
+and none after. There is still no positive-path GPU FROST verification test.
+
+## 2026-09-25 - OpenCL AMD kernel link failure (plain inline) — GH-436
+
+AMD/ROCm (gfx900, ROCm 7.1) failed to build OpenCL programs containing the larger
+field helpers (field_inv_impl, field_sqr_impl, ...). Root cause: OpenCL C99
+`inline` does not emit an external definition; when the compiler does not inline,
+the linker sees "undefined hidden symbol". NVIDIA was protected by
+`__attribute__((always_inline))`. Only `hash160` built by accident.
+
+**Fix:** all helper definitions (FORCE_INLINE on non-NV + every bare `inline` in
+the .cl files) changed to `static inline` (TU-local definition always present).
+FORCE_INLINE_STATIC already was. Updated field.cl macro + ~8 other kernel files.
+No behaviour change; full parity with previous results on NVIDIA.
+
+**Audit surface added:**
+- New wired regression: `regression_opencl_static_inline_link` (differential)
+  in unified_audit_runner (test_regression_opencl_static_inline_link_run).
+- Source hygiene + build linkage now exercised on every audit run.
+- CHANGELOG entry + this note.
+
+The previous bare-inline sources would have made the new gate red on any
+C99-strict OpenCL implementation.
+
 ## 2026-09-22 - 259 allocations retained at process exit had no way to be released
 
 Reported by evoskuil (libbitcoin) as GitHub issue #430, against

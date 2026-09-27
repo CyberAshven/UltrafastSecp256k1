@@ -228,6 +228,7 @@ int test_regression_ct_blinding_nonce_path_run();    // CT nonce path uses gener
 int test_regression_hmac_guard_fail_closed_run();    // RFC 6979 HMAC length guards zero out[32] before returning
 int test_regression_metal_shader_closure_run();      // Metal shader include closure complete + copied
 int test_regression_opencl_kernel_closure_run();     // OpenCL scan-only embed is self-contained (#415)
+int test_regression_opencl_static_inline_link_run();   // GH-436: all .cl helpers use static inline (AMD link fix, no bare `inline` external-def hazard)
 int test_regression_metal_buffer_binding_order_run(); // Metal dispatch order == kernel [[buffer(N)]] order
 int test_regression_precompute_noop_reconfigure_run();// identical configure_fixed_base must not rebuild the table
 int test_regression_fixed_base_cache_lifecycle_run(); // fixed-base cache: no CWD litter, cache_dir honoured on write
@@ -1772,6 +1773,8 @@ static const AuditModule ALL_MODULES[] = {
     { "regression_metal_shader_closure", "Metal shader include closure is complete and fully copied: every quoted include of secp256k1_kernels.metal resolves, SHADER_FILES covers the whole closure, and the loader keeps no hardcoded header list (MSC-1..4)", "memory_safety", test_regression_metal_shader_closure_run, false },
     // === 2026-09-21 OpenCL scan-only embed closure (#415, the OpenCL twin of #335) ===
     { "regression_opencl_kernel_closure", "OpenCL scan-only kernel embed is self-contained: with -DSECP256K1_OPENCL_SCAN_ONLY the six embedded .cl files reference no ct_* symbol and no CT* type, and without it they do -- so the check cannot pass vacuously (OKC-1..4)", "memory_safety", test_regression_opencl_kernel_closure_run, false },
+    // === 2026-09-25 OpenCL AMD static-inline link regression (GH-436) ===
+    { "regression_opencl_static_inline_link", "All OpenCL .cl helpers use `static inline` (not bare `inline`): prevents AMD/ROCm 'undefined hidden symbol' for field_inv_impl etc when compiler declines to inline (GH-436).", "differential", test_regression_opencl_static_inline_link_run, false },
     { "regression_metal_buffer_binding_order", "Metal host dispatch argument order matches each kernel's [[buffer(N)]] parameter order: schnorr_verify_batch bound the message and the x-only pubkey swapped and rejected every valid BIP-340 signature (MBB-1..3)", "memory_safety", test_regression_metal_buffer_binding_order_run, false },
     { "regression_precompute_noop_reconfigure", "Re-applying an identical FixedBaseConfig keeps the built fixed-base context instead of recomputing the ~250 MB table; a real change still invalidates (PNR-1..4)", "memory_safety", test_regression_precompute_noop_reconfigure_run, false },
     // === 2026-07-21 Metal generic batch fatal-not-invalid regression (#347) ===

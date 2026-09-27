@@ -117,6 +117,17 @@ target_link_libraries(secp256k1_opencl
         OpenCL::OpenCL
 )
 
+# Make OpenCL optional at load time for consumers (addresses GH#434 / #435):
+# - Windows: /DELAYLOAD so absence of OpenCL.dll does not prevent process start.
+# - The actual OpenCL functions are still called only after successful probe in the backend.
+if(MSVC)
+    target_link_options(secp256k1_opencl PRIVATE
+        /DELAYLOAD:OpenCL.dll
+    )
+    # Also add the delayload lib (provided by MSVC)
+    target_link_libraries(secp256k1_opencl PRIVATE delayimp)
+endif()
+
 # Compiler flags (global -Wall/-Wextra/-Wpedantic inherited from root CMakeLists.txt)
 # Only add per-target overrides that differ from global policy.
 if(MSVC)

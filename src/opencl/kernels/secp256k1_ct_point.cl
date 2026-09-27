@@ -31,7 +31,7 @@ typedef struct {
 // CT Jacobian to affine conversion (branchless field inversion)
 // Used by ct_ecdsa_sign_impl and ct_schnorr_sign_impl in secp256k1_ct_sign.cl
 // ---------------------------------------------------------------------------
-inline void ct_jacobian_to_affine(const CTJacobianPoint* p,
+static inline void ct_jacobian_to_affine(const CTJacobianPoint* p,
                                   FieldElement* x_out, FieldElement* y_out) {
     FieldElement zi, zi2, zi3;
     field_inv_impl(&zi, &p->z);
@@ -44,7 +44,7 @@ inline void ct_jacobian_to_affine(const CTJacobianPoint* p,
 // ---------------------------------------------------------------------------
 // Conversion utilities
 // ---------------------------------------------------------------------------
-inline void ct_point_set_infinity(CTJacobianPoint* p) {
+static inline void ct_point_set_infinity(CTJacobianPoint* p) {
     for (int i = 0; i < 4; ++i) {
         p->x.limbs[i] = 0;
         p->y.limbs[i] = 0;
@@ -54,7 +54,7 @@ inline void ct_point_set_infinity(CTJacobianPoint* p) {
     p->infinity = ~(ulong)0;
 }
 
-inline JacobianPoint ct_point_to_jacobian(const CTJacobianPoint* p) {
+static inline JacobianPoint ct_point_to_jacobian(const CTJacobianPoint* p) {
     JacobianPoint r;
     r.x = p->x;
     r.y = p->y;
@@ -63,7 +63,7 @@ inline JacobianPoint ct_point_to_jacobian(const CTJacobianPoint* p) {
     return r;
 }
 
-inline CTJacobianPoint ct_point_from_jacobian(const JacobianPoint* p) {
+static inline CTJacobianPoint ct_point_from_jacobian(const JacobianPoint* p) {
     CTJacobianPoint r;
     r.x = p->x;
     r.y = p->y;
@@ -75,28 +75,28 @@ inline CTJacobianPoint ct_point_from_jacobian(const JacobianPoint* p) {
 // ---------------------------------------------------------------------------
 // CT conditional ops on points
 // ---------------------------------------------------------------------------
-inline void ct_point_cmov(CTJacobianPoint* r, const CTJacobianPoint* a, ulong mask) {
+static inline void ct_point_cmov(CTJacobianPoint* r, const CTJacobianPoint* a, ulong mask) {
     ct_cmov256((ulong*)r->x.limbs, (const ulong*)a->x.limbs, mask);
     ct_cmov256((ulong*)r->y.limbs, (const ulong*)a->y.limbs, mask);
     ct_cmov256((ulong*)r->z.limbs, (const ulong*)a->z.limbs, mask);
     ct_cmov64(&r->infinity, a->infinity, mask);
 }
 
-inline void ct_aff_cmov(CTAffinePoint* r, const CTAffinePoint* a, ulong mask) {
+static inline void ct_aff_cmov(CTAffinePoint* r, const CTAffinePoint* a, ulong mask) {
     ct_cmov256((ulong*)r->x.limbs, (const ulong*)a->x.limbs, mask);
     ct_cmov256((ulong*)r->y.limbs, (const ulong*)a->y.limbs, mask);
     ct_cmov64(&r->infinity, a->infinity, mask);
 }
 
 // Conditionally negate Y: if mask, y = -y
-inline void ct_point_cneg_y(CTAffinePoint* p, ulong mask) {
+static inline void ct_point_cneg_y(CTAffinePoint* p, ulong mask) {
     FieldElement neg;
     ct_field_neg_impl(&neg, &p->y);
     ct_field_cmov(&p->y, &neg, mask);
 }
 
 // CT lookup from affine table (scans ALL entries)
-inline void ct_affine_table_lookup(const CTAffinePoint* table, int table_size,
+static inline void ct_affine_table_lookup(const CTAffinePoint* table, int table_size,
                                    int index, CTAffinePoint* out) {
     *out = table[0];
     for (int i = 1; i < table_size; ++i) {
@@ -108,7 +108,7 @@ inline void ct_affine_table_lookup(const CTAffinePoint* table, int table_size,
 // ---------------------------------------------------------------------------
 // CT point doubling (standard 4M+4S, with CT infinity handling)
 // ---------------------------------------------------------------------------
-inline void ct_point_dbl(const CTJacobianPoint* p, CTJacobianPoint* r) {
+static inline void ct_point_dbl(const CTJacobianPoint* p, CTJacobianPoint* r) {
     // Standard Jacobian doubling
     FieldElement a, b, c, d, e, f;
 
@@ -158,7 +158,7 @@ inline void ct_point_dbl(const CTJacobianPoint* p, CTJacobianPoint* r) {
 // CT point add mixed (Jacobian + Affine -> Jacobian)
 // Brier-Joye complete formula: 7M + 5S, handles all degenerate cases
 // ---------------------------------------------------------------------------
-inline void ct_point_add_mixed(const CTJacobianPoint* p, const CTAffinePoint* q,
+static inline void ct_point_add_mixed(const CTJacobianPoint* p, const CTAffinePoint* q,
                                CTJacobianPoint* r) {
     FieldElement z2, u2, s2, h, hh, i, j, rr, v;
 
@@ -227,7 +227,7 @@ inline void ct_point_add_mixed(const CTJacobianPoint* p, const CTAffinePoint* q,
 // ---------------------------------------------------------------------------
 // CT batch field inverse (Montgomery trick)
 // ---------------------------------------------------------------------------
-inline void ct_batch_field_inv(FieldElement* vals, FieldElement* invs, int n) {
+static inline void ct_batch_field_inv(FieldElement* vals, FieldElement* invs, int n) {
     if (n <= 0) return;
     FieldElement acc[16];  // max 16
     acc[0] = vals[0];
@@ -247,7 +247,7 @@ inline void ct_batch_field_inv(FieldElement* vals, FieldElement* invs, int n) {
 // ---------------------------------------------------------------------------
 // CT scalar multiplication: k*P using GLV + 4-bit windowed
 // ---------------------------------------------------------------------------
-inline void ct_scalar_mul_point(const CTJacobianPoint* p, const Scalar* k,
+static inline void ct_scalar_mul_point(const CTJacobianPoint* p, const Scalar* k,
                                 CTJacobianPoint* r_out) {
     // GLV decomposition
     CTGLVDecompositionOCL glv;
@@ -439,7 +439,7 @@ __constant ulong CT_G_TABLE_B[15][8] = {
 // ---------------------------------------------------------------------------
 // CT generator multiplication: k*G (fixed-base, precomputed tables)
 // ---------------------------------------------------------------------------
-inline void ct_generator_mul_impl(const Scalar* k, CTJacobianPoint* r_out) {
+static inline void ct_generator_mul_impl(const Scalar* k, CTJacobianPoint* r_out) {
     CTGLVDecompositionOCL glv;
     ct_glv_decompose_impl(k, &glv);
 

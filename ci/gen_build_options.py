@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import os
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -160,19 +161,50 @@ def parse_options(text: str):
 
 
 def _iter_cmakelists():
-    """Yield CMakeLists.txt paths under ROOT, pruning SKIP_PARTS directories
-    (including .aiworkhub) before descending into them.
+    """Yield CMakeLists.txt.
 
-    Path.rglob() has no way to prune a subtree before entering it, so it would
-    still walk into .aiworkhub/runtime/worktrees/<id>/... — per-task AIWorkHub
-    checkouts that other concurrent tasks create and tear down while this scan
-    runs. Descending into one would pollute BUILD_OPTIONS.md with duplicate
-    option() entries from a nested repo copy (non-deterministic: depends on
-    which worktrees happen to exist at scan time) and risks the walk hitting a
-    directory that vanishes mid-scan. os.walk() lets us drop skipped directory
-    names from `dirnames` in place, so pruned subtrees are never entered and
-    can never race.
+    This guarantees identical results in:
+    - shallow CI checkouts (default actions/checkout depth=1, no submodules)
+    - full clones
+    - dirty worktrees with untracked dirs (research/, .aiworkhub/*, build-*/)
+    - any environment
+
+    It completely ignores:
+    - untracked directories and files (never part of the committed tree)
+    - submodule contents (gitlink entries; their CMakeLists are not in this repo's index)
+    - transient AIWorkHub worktrees, build trees, etc.
+
+    Falls back to pruned os.walk only if git is unavailable (should never happen in CI).
     """
+    # Are we at the real git root for the current g.ROOT?
+    git_root = None
+    try:
+        out = subprocess.check_output(
+            ["git", "rev-parse", "--show-toplevel"],
+            cwd=ROOT, text=True, stderr=subprocess.DEVNULL
+        ).strip()
+        if out:
+            git_root = Path(out)
+    except Exception:
+        pass
+
+    use_git = bool(git_root and git_root.resolve() == ROOT.resolve())
+
+    if use_git:
+        try:
+            out = subprocess.check_output(
+                ["git", "ls-files", "--", "**/CMakeLists.txt"],
+                cwd=ROOT, text=True, stderr=subprocess.DEVNULL
+            )
+            for line in out.splitlines():
+                line = line.strip()
+                if line:
+                    yield ROOT / line
+            return
+        except Exception:
+            pass
+
+    # test scratch or git unavailable → pruned walk on whatever is on disk under ROOT
     for dirpath, dirnames, filenames in os.walk(ROOT):
         dirnames[:] = [d for d in dirnames if not _is_skipped_part(d)]
         if "CMakeLists.txt" in filenames:

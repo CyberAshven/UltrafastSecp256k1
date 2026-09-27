@@ -28,6 +28,8 @@ def main() -> int:
         ("compat/libbitcoin_bridge/tests/test_lbtc_bridge.cpp", True),
         ("compat/libbitcoin_direct/tests/test_direct_verify.cpp", True),
         ("compat/libbitcoin_direct/include/ufsecp/libbitcoin.hpp", False),
+        # 2026-09-25: added to cover retroactive entries for security gate script changes themselves
+        # (the 8998cd89 coverage + frozen count increments touch the SECURITY_CI_FILE).
         ("docs/AUDIT_CHANGELOG.md", False),
     ]
 

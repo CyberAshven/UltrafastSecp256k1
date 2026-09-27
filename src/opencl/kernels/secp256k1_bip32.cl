@@ -53,7 +53,7 @@ __constant ulong SHA512_K[80] = {
     0x4cc5d4becb3e42b6UL, 0x597f299cfc657e2aUL, 0x5fcb6fab3ad6faecUL, 0x6c44198c4a475817UL,
 };
 
-inline ulong sha512_rotr(ulong x, int n) {
+static inline ulong sha512_rotr(ulong x, int n) {
     return (x >> n) | (x << (64 - n));
 }
 
@@ -64,7 +64,7 @@ typedef struct {
     ulong total;
 } SHA512Ctx;
 
-inline void sha512_compress(SHA512Ctx* ctx, const uchar block[128]) {
+static inline void sha512_compress(SHA512Ctx* ctx, const uchar block[128]) {
     ulong w[80];
     for (int i = 0; i < 16; i++) {
         w[i] = 0;
@@ -96,7 +96,7 @@ inline void sha512_compress(SHA512Ctx* ctx, const uchar block[128]) {
     ctx->h[4] += e; ctx->h[5] += f; ctx->h[6] += g; ctx->h[7] += hh;
 }
 
-inline void sha512_init(SHA512Ctx* ctx) {
+static inline void sha512_init(SHA512Ctx* ctx) {
     ctx->h[0] = 0x6a09e667f3bcc908UL; ctx->h[1] = 0xbb67ae8584caa73bUL;
     ctx->h[2] = 0x3c6ef372fe94f82bUL; ctx->h[3] = 0xa54ff53a5f1d36f1UL;
     ctx->h[4] = 0x510e527fade682d1UL; ctx->h[5] = 0x9b05688c2b3e6c1fUL;
@@ -105,7 +105,7 @@ inline void sha512_init(SHA512Ctx* ctx) {
     ctx->total = 0;
 }
 
-inline void sha512_update(SHA512Ctx* ctx, const uchar* data, uint len) {
+static inline void sha512_update(SHA512Ctx* ctx, const uchar* data, uint len) {
     ctx->total += len;
     uint offset = 0;
 
@@ -131,7 +131,7 @@ inline void sha512_update(SHA512Ctx* ctx, const uchar* data, uint len) {
     }
 }
 
-inline void sha512_final(SHA512Ctx* ctx, uchar out[64]) {
+static inline void sha512_final(SHA512Ctx* ctx, uchar out[64]) {
     ulong bit_len = ctx->total * 8;
     ctx->buf[ctx->buf_len++] = 0x80;
 
@@ -154,7 +154,7 @@ inline void sha512_final(SHA512Ctx* ctx, uchar out[64]) {
             out[i * 8 + j] = (uchar)(ctx->h[i] >> (56 - j * 8));
 }
 
-inline void sha512_impl(const uchar* data, uint len, uchar out[64]) {
+static inline void sha512_impl(const uchar* data, uint len, uchar out[64]) {
     SHA512Ctx ctx;
     sha512_init(&ctx);
     sha512_update(&ctx, data, len);
@@ -165,7 +165,7 @@ inline void sha512_impl(const uchar* data, uint len, uchar out[64]) {
 // HMAC-SHA512
 // =============================================================================
 
-inline void hmac_sha512_impl(
+static inline void hmac_sha512_impl(
     const uchar* key, uint key_len,
     const uchar* msg, uint msg_len,
     uchar out[64])
@@ -238,9 +238,9 @@ __constant uint BIP32_RIPEMD_K2[5] = {
     0x50A28BE6U, 0x5C4DD124U, 0x6D703EF3U, 0x7A6D76E9U, 0x00000000U
 };
 
-inline uint bip32_rotl32(uint x, uint n) { return (x << n) | (x >> (32 - n)); }
+static inline uint bip32_rotl32(uint x, uint n) { return (x << n) | (x >> (32 - n)); }
 
-inline uint bip32_ripemd_f(int j, uint x, uint y, uint z) {
+static inline uint bip32_ripemd_f(int j, uint x, uint y, uint z) {
     if (j <= 15) return x ^ y ^ z;
     if (j <= 31) return (x & y) | (~x & z);
     if (j <= 47) return (x | ~y) ^ z;
@@ -249,7 +249,7 @@ inline uint bip32_ripemd_f(int j, uint x, uint y, uint z) {
 }
 
 // RIPEMD-160 of exactly 32 bytes (SHA-256 output)
-inline void bip32_ripemd160_32(const uchar data[32], uchar out[20]) {
+static inline void bip32_ripemd160_32(const uchar data[32], uchar out[20]) {
     uchar block[64];
     for (int i = 0; i < 64; ++i) block[i] = 0;
     for (int i = 0; i < 32; ++i) block[i] = data[i];
@@ -299,7 +299,7 @@ inline void bip32_ripemd160_32(const uchar data[32], uchar out[20]) {
 }
 
 // Hash160 = RIPEMD160(SHA256(data)), using streaming SHA-256 from extended.cl
-inline void bip32_hash160(const uchar* data, uint len, uchar out[20]) {
+static inline void bip32_hash160(const uchar* data, uint len, uchar out[20]) {
     SHA256Ctx ctx;
     sha256_init(&ctx);
     sha256_update(&ctx, data, len);
@@ -312,7 +312,7 @@ inline void bip32_hash160(const uchar* data, uint len, uchar out[20]) {
 // Point decompression (33-byte compressed pubkey -> JacobianPoint)
 // =============================================================================
 
-inline int bip32_point_from_compressed_impl(const uchar compressed[33], JacobianPoint* out) {
+static inline int bip32_point_from_compressed_impl(const uchar compressed[33], JacobianPoint* out) {
     uchar prefix = compressed[0];
     if (prefix != 0x02 && prefix != 0x03) return 0;
 
@@ -383,7 +383,7 @@ typedef struct {
 // BIP-32 Master Key from Seed
 // =============================================================================
 
-inline int bip32_master_key_impl(const uchar* seed, uint seed_len, ExtendedKeyOCL* master) {
+static inline int bip32_master_key_impl(const uchar* seed, uint seed_len, ExtendedKeyOCL* master) {
     const uchar btc_seed[12] = {'B','i','t','c','o','i','n',' ','s','e','e','d'};
     uchar I[64];
     hmac_sha512_impl(btc_seed, 12, seed, seed_len, I);
@@ -422,7 +422,7 @@ inline int bip32_master_key_impl(const uchar* seed, uint seed_len, ExtendedKeyOC
 // BIP-32 Fingerprint
 // =============================================================================
 
-inline void bip32_fingerprint_impl(const ExtendedKeyOCL* xkey, uchar fp[4]) {
+static inline void bip32_fingerprint_impl(const ExtendedKeyOCL* xkey, uchar fp[4]) {
     uchar compressed[33];
 
     if (xkey->is_private) {
@@ -445,7 +445,7 @@ inline void bip32_fingerprint_impl(const ExtendedKeyOCL* xkey, uchar fp[4]) {
 // BIP-32 Child Key Derivation
 // =============================================================================
 
-inline int bip32_derive_child_impl(
+static inline int bip32_derive_child_impl(
     const ExtendedKeyOCL* parent,
     uint index,
     ExtendedKeyOCL* child)
@@ -542,12 +542,12 @@ inline int bip32_derive_child_impl(
     return 1;
 }
 
-inline int bip32_derive_normal_impl(const ExtendedKeyOCL* parent, uint index,
+static inline int bip32_derive_normal_impl(const ExtendedKeyOCL* parent, uint index,
                                      ExtendedKeyOCL* child) {
     return bip32_derive_child_impl(parent, index, child);
 }
 
-inline int bip32_derive_hardened_impl(const ExtendedKeyOCL* parent, uint index,
+static inline int bip32_derive_hardened_impl(const ExtendedKeyOCL* parent, uint index,
                                        ExtendedKeyOCL* child) {
     return bip32_derive_child_impl(parent, 0x80000000U | index, child);
 }
@@ -556,7 +556,7 @@ inline int bip32_derive_hardened_impl(const ExtendedKeyOCL* parent, uint index,
 // BIP-32 Public Key
 // =============================================================================
 
-inline int bip32_public_key_impl(const ExtendedKeyOCL* xkey, uchar compressed[33]) {
+static inline int bip32_public_key_impl(const ExtendedKeyOCL* xkey, uchar compressed[33]) {
     if (xkey->is_private) {
         Scalar sk;
         scalar_from_bytes_impl(xkey->key, &sk);
@@ -574,7 +574,7 @@ inline int bip32_public_key_impl(const ExtendedKeyOCL* xkey, uchar compressed[33
 // BIP-32 Serialize (78 bytes)
 // =============================================================================
 
-inline void bip32_serialize_impl(const ExtendedKeyOCL* xkey, int mainnet, uchar out[78]) {
+static inline void bip32_serialize_impl(const ExtendedKeyOCL* xkey, int mainnet, uchar out[78]) {
     uint version;
     if (xkey->is_private)
         version = mainnet ? 0x0488ADE4U : 0x04358394U;
@@ -605,7 +605,7 @@ inline void bip32_serialize_impl(const ExtendedKeyOCL* xkey, int mainnet, uchar 
 // BIP-32 to_public (private -> public)
 // =============================================================================
 
-inline int bip32_to_public_impl(const ExtendedKeyOCL* xpriv, ExtendedKeyOCL* xpub) {
+static inline int bip32_to_public_impl(const ExtendedKeyOCL* xpriv, ExtendedKeyOCL* xpub) {
     if (!xpriv->is_private) {
         *xpub = *xpriv;
         return 1;

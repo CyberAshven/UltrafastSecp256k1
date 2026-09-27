@@ -11,7 +11,7 @@
 #define SECP256K1_MSM_CL
 
 // -- Naive MSM (small n) ------------------------------------------------------
-inline void msm_naive_impl(const Scalar* scalars,
+static inline void msm_naive_impl(const Scalar* scalars,
                             const JacobianPoint* points,
                             int n,
                             JacobianPoint* result)
@@ -45,7 +45,7 @@ inline void msm_naive_impl(const Scalar* scalars,
 }
 
 // -- Scalar get_window --------------------------------------------------------
-inline uint scalar_get_window_impl(const Scalar* s, int window_idx, int window_bits) {
+static inline uint scalar_get_window_impl(const Scalar* s, int window_idx, int window_bits) {
     int bit_offset = window_idx * window_bits;
     int limb_idx = bit_offset / 64;
     int bit_idx = bit_offset % 64;
@@ -61,7 +61,7 @@ inline uint scalar_get_window_impl(const Scalar* s, int window_idx, int window_b
 }
 
 // -- Pippenger MSM with caller-provided buckets ------------------------------
-inline void msm_pippenger_impl(const Scalar* scalars,
+static inline void msm_pippenger_impl(const Scalar* scalars,
                                 const JacobianPoint* points,
                                 int n,
                                 JacobianPoint* result,
@@ -153,7 +153,7 @@ inline void msm_pippenger_impl(const Scalar* scalars,
 }
 
 // -- Optimal window width -----------------------------------------------------
-inline int msm_optimal_window_impl(int n) {
+static inline int msm_optimal_window_impl(int n) {
     if (n <= 1)    return 1;
     if (n <= 4)    return 2;
     if (n <= 16)   return 3;
@@ -165,7 +165,7 @@ inline int msm_optimal_window_impl(int n) {
 }
 
 // -- Small MSM with stack buckets (c=4, 16 buckets) ---------------------------
-inline void msm_small_impl(const Scalar* scalars,
+static inline void msm_small_impl(const Scalar* scalars,
                              const JacobianPoint* points,
                              int n,
                              JacobianPoint* result)

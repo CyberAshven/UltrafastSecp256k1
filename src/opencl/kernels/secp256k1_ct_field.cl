@@ -12,7 +12,7 @@
 // ---------------------------------------------------------------------------
 // 256-bit add with carry (a + b -> r, returns carry)
 // ---------------------------------------------------------------------------
-inline ulong ct_add256(const ulong a[4], const ulong b[4], ulong r[4]) {
+static inline ulong ct_add256(const ulong a[4], const ulong b[4], ulong r[4]) {
     ulong carry = 0;
     for (int i = 0; i < 4; ++i) {
         ulong sum = a[i] + b[i] + carry;
@@ -23,7 +23,7 @@ inline ulong ct_add256(const ulong a[4], const ulong b[4], ulong r[4]) {
 }
 
 // 256-bit sub with borrow (a - b -> r, returns borrow)
-inline ulong ct_sub256(const ulong a[4], const ulong b[4], ulong r[4]) {
+static inline ulong ct_sub256(const ulong a[4], const ulong b[4], ulong r[4]) {
     ulong borrow = 0;
     for (int i = 0; i < 4; ++i) {
         ulong diff = a[i] - b[i] - borrow;
@@ -42,7 +42,7 @@ inline ulong ct_sub256(const ulong a[4], const ulong b[4], ulong r[4]) {
 #define CT_FIELD_P2 0xFFFFFFFFFFFFFFFFUL
 #define CT_FIELD_P3 0xFFFFFFFFFFFFFFFFUL
 
-inline void ct_reduce_field(FieldElement* r) {
+static inline void ct_reduce_field(FieldElement* r) {
     const ulong p[4] = { CT_FIELD_P0, CT_FIELD_P1, CT_FIELD_P2, CT_FIELD_P3 };
     ulong tmp[4];
     ulong borrow = ct_sub256(r->limbs, p, tmp);
@@ -55,7 +55,7 @@ inline void ct_reduce_field(FieldElement* r) {
 // ---------------------------------------------------------------------------
 // CT field_add: r = (a + b) mod p, branchless
 // ---------------------------------------------------------------------------
-inline void ct_field_add_impl(FieldElement* r, const FieldElement* a, const FieldElement* b) {
+static inline void ct_field_add_impl(FieldElement* r, const FieldElement* a, const FieldElement* b) {
     ulong carry = ct_add256(a->limbs, b->limbs, r->limbs);
     // If carry or r >= p, subtract p
     const ulong p[4] = { CT_FIELD_P0, CT_FIELD_P1, CT_FIELD_P2, CT_FIELD_P3 };
@@ -70,7 +70,7 @@ inline void ct_field_add_impl(FieldElement* r, const FieldElement* a, const Fiel
 // ---------------------------------------------------------------------------
 // CT field_sub: r = (a - b) mod p, branchless
 // ---------------------------------------------------------------------------
-inline void ct_field_sub_impl(FieldElement* r, const FieldElement* a, const FieldElement* b) {
+static inline void ct_field_sub_impl(FieldElement* r, const FieldElement* a, const FieldElement* b) {
     ulong borrow = ct_sub256(a->limbs, b->limbs, r->limbs);
     // If borrow, add p back
     const ulong p[4] = { CT_FIELD_P0, CT_FIELD_P1, CT_FIELD_P2, CT_FIELD_P3 };
@@ -84,7 +84,7 @@ inline void ct_field_sub_impl(FieldElement* r, const FieldElement* a, const Fiel
 // ---------------------------------------------------------------------------
 // CT field_neg: r = (-a) mod p = p - a (if a != 0), else 0
 // ---------------------------------------------------------------------------
-inline void ct_field_neg_impl(FieldElement* r, const FieldElement* a) {
+static inline void ct_field_neg_impl(FieldElement* r, const FieldElement* a) {
     const ulong p[4] = { CT_FIELD_P0, CT_FIELD_P1, CT_FIELD_P2, CT_FIELD_P3 };
     ulong tmp[4];
     ct_sub256(p, a->limbs, tmp);
@@ -97,7 +97,7 @@ inline void ct_field_neg_impl(FieldElement* r, const FieldElement* a) {
 // CT field_mul/sqr/inv: wrap fast-path (already data-independent instruction count)
 // The value_barrier prevents the compiler from short-circuiting
 // ---------------------------------------------------------------------------
-inline void ct_field_mul(FieldElement* r, const FieldElement* a, const FieldElement* b) {
+static inline void ct_field_mul(FieldElement* r, const FieldElement* a, const FieldElement* b) {
     FieldElement a2 = *a, b2 = *b;
     for (int i = 0; i < 4; ++i) {
         a2.limbs[i] = ct_value_barrier(a2.limbs[i]);
@@ -106,14 +106,14 @@ inline void ct_field_mul(FieldElement* r, const FieldElement* a, const FieldElem
     field_mul_impl(r, &a2, &b2);
 }
 
-inline void ct_field_sqr(FieldElement* r, const FieldElement* a) {
+static inline void ct_field_sqr(FieldElement* r, const FieldElement* a) {
     FieldElement a2 = *a;
     for (int i = 0; i < 4; ++i)
         a2.limbs[i] = ct_value_barrier(a2.limbs[i]);
     field_sqr_impl(r, &a2);
 }
 
-inline void ct_field_inv(FieldElement* r, const FieldElement* a) {
+static inline void ct_field_inv(FieldElement* r, const FieldElement* a) {
     FieldElement a2 = *a;
     for (int i = 0; i < 4; ++i)
         a2.limbs[i] = ct_value_barrier(a2.limbs[i]);
@@ -121,7 +121,7 @@ inline void ct_field_inv(FieldElement* r, const FieldElement* a) {
 }
 
 // CT field_half: r = a/2 mod p (branchless)
-inline void ct_field_half_impl(FieldElement* r, const FieldElement* a) {
+static inline void ct_field_half_impl(FieldElement* r, const FieldElement* a) {
     ulong odd_mask = ct_bool_to_mask(a->limbs[0] & 1);
     const ulong p[4] = { CT_FIELD_P0, CT_FIELD_P1, CT_FIELD_P2, CT_FIELD_P3 };
     ulong tmp[4];
@@ -139,19 +139,19 @@ inline void ct_field_half_impl(FieldElement* r, const FieldElement* a) {
 // ---------------------------------------------------------------------------
 // CT field predicates (constant-time, branchless)
 // ---------------------------------------------------------------------------
-inline ulong ct_field_is_zero(const FieldElement* a) {
+static inline ulong ct_field_is_zero(const FieldElement* a) {
     ulong acc = 0;
     for (int i = 0; i < 4; ++i) acc |= a->limbs[i];
     return ct_is_zero_mask(acc);
 }
 
-inline ulong ct_field_eq(const FieldElement* a, const FieldElement* b) {
+static inline ulong ct_field_eq(const FieldElement* a, const FieldElement* b) {
     ulong acc = 0;
     for (int i = 0; i < 4; ++i) acc |= (a->limbs[i] ^ b->limbs[i]);
     return ct_is_zero_mask(acc);
 }
 
-inline void ct_field_normalize(FieldElement* r) {
+static inline void ct_field_normalize(FieldElement* r) {
     ct_reduce_field(r);
 }
 

@@ -355,7 +355,12 @@ using namespace cuda;
 namespace {
 
 struct CudaBatchScratch {
-    std::vector<uint8_t> result_bytes;
+    // Host result staging buffer. Raw pointer + capacity instead of std::vector
+    // to avoid per-thread heap allocation (Alloc_proxy) from thread_local ctor
+    // even when the CUDA backend is never used (fixes the last 16-byte block
+    // reported in GH#430 under MSVC debug CRT when CUDA is disabled in the build).
+    uint8_t*  result_bytes = nullptr;
+    std::size_t result_bytes_cap = 0;
     uint8_t* lbtc_rows = nullptr;
     uint8_t* lbtc_cols = nullptr;      // packed column staging: dig | pub/xon | sig
     bool* lbtc_results = nullptr;
@@ -382,13 +387,16 @@ struct CudaBatchScratch {
     }
 
     uint8_t* ensure_results(std::size_t count) {
-        if (result_bytes.size() < count) {
-            result_bytes.resize(count);
+        if (result_bytes_cap < count) {
+            delete[] result_bytes;
+            result_bytes = new uint8_t[count];
+            result_bytes_cap = count;
         }
-        return result_bytes.data();
+        return result_bytes;
     }
 
     void free_lbtc_device() {
+        if (result_bytes) { delete[] result_bytes; result_bytes = nullptr; result_bytes_cap = 0; }
         if (lbtc_sighash_meta)   { cudaFree(lbtc_sighash_meta);   lbtc_sighash_meta = nullptr;   lbtc_sighash_meta_bytes = 0; }
         if (lbtc_sighash_out)    { cudaFree(lbtc_sighash_out);    lbtc_sighash_out = nullptr;    lbtc_sighash_out_bytes = 0; }
         if (lbtc_sighash_pool)   { cudaFree(lbtc_sighash_pool);   lbtc_sighash_pool = nullptr;   lbtc_sighash_pool_bytes = 0; }

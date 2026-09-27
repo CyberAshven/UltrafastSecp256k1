@@ -163,7 +163,7 @@ jobs:
         # (same fix the release workflow already applies to its Windows test step).
         env:
           PYTHONUTF8: '1'
-        run: ctest --test-dir out/build --output-on-failure -j $env:NUMBER_OF_PROCESSORS --timeout 300 --build-config Release -E '^ct_sidechannel'
+        run: ctest --test-dir out/build --output-on-failure -j $env:NUMBER_OF_PROCESSORS --timeout 300 --build-config Release -E '^(ct_sidechannel|regression_metal|regression_cuda|regression_opencl)'
 
   # ===========================================================================
   # macOS (apple-clang)

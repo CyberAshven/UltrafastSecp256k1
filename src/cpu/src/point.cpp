@@ -4221,14 +4221,19 @@ namespace {
         std::lock_guard<std::mutex> lk(g_dual_mul_gen_tables_init_m);
         const DualMulGenTables* p = g_dual_mul_gen_tables.load(std::memory_order_relaxed);
         if (!p) {
-            auto* t = new DualMulGenTables;
+            // Use static storage (no heap allocation) so MSVC CRT leak detectors and
+            // sanitizers do not report the 1.3 MiB generator tables as leaks at exit.
+            // This keeps drop-in compatibility for plain secp256k1_ecdsa_verify users
+            // (no need to call release_process_resources() for the common path).
+            // Storage is still immortal (as intended), but not from operator new.
+            static DualMulGenTables g_storage;
             Point const G = Point::generator();
             JacobianPoint52 const G52 = to_jac52(G);
-            dual_mul_build_table(G52, t->tbl_G, static_cast<std::size_t>(kDualMulGTableSize));
+            dual_mul_build_table(G52, g_storage.tbl_G, static_cast<std::size_t>(kDualMulGTableSize));
             JacobianPoint52 H52 = G52;
             for (std::size_t i = 0; i < 128; i++) jac52_double_inplace(H52);
-            dual_mul_build_table(H52, t->tbl_H, static_cast<std::size_t>(kDualMulGTableSize));
-            p = t;
+            dual_mul_build_table(H52, g_storage.tbl_H, static_cast<std::size_t>(kDualMulGTableSize));
+            p = &g_storage;
             g_dual_mul_gen_tables.store(p, std::memory_order_release);
         }
         return p;
@@ -4263,7 +4268,9 @@ void release_gen_tables() noexcept {
         std::lock_guard<std::mutex> lk(g_dual_mul_gen_tables_init_m);
         p = g_dual_mul_gen_tables.exchange(nullptr, std::memory_order_acq_rel);
     }
-    delete p;
+    // Do not delete: we now use static storage (no heap) to avoid CRT leak reports.
+    // The exchange to nullptr is enough to allow a later rebuild on re-use after release.
+    (void)p;  // p was only for the old delete path; static storage lifetime is process
 #endif
 }
 

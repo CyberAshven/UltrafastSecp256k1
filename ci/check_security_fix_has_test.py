@@ -112,6 +112,23 @@ RETROACTIVELY_COVERED: dict[str, tuple[list[str], str]] = {
         "no job list and no permission changed here -- only how long one build is "
         "allowed to take.",
     ),
+    "8998cd8975": (
+        ["audit/test_regression_process_resource_release.cpp"],
+        "RPM build fix + Windows CI Advisory exclusion + #430 generator table static storage (no heap new). "
+        "The src/cpu/src/point.cpp change (DualMulGenTables now static instead of operator new) eliminates the "
+        "1.3 MiB leak report. Covered by the process resource release regression test (which asserts release "
+        "frees/rebuilds the tables and that post-release values match independent computation).",
+    ),
+    "937ac6c20e": (
+        ["ci/test_check_security_fix_has_test.py"],
+        "Retroactive coverage entry for 8998cd89 (static generator tables for #430). "
+        "This commit only added the RETROACTIVELY_COVERED entry. Covered by the paired Python unit test for the gate itself.",
+    ),
+    "f58b27ee2e": (
+        ["ci/test_check_security_fix_has_test.py"],
+        "Increment FROZEN_COUNT after adding retroactive entry. Pure gate maintenance. "
+        "Covered by ci/test_check_security_fix_has_test.py (the self-test for this exact checker).",
+    ),
     "8c25dd3eb1": (
         ["audit/test_regression_scalar_decomposition_and_comb.cpp"],
         "Pure dead-code removal: jac52_add_mixed_inplace_zr (src/cpu/src/point.cpp) "
@@ -746,7 +763,7 @@ RETROACTIVELY_COVERED: dict[str, tuple[list[str], str]] = {
 # Frozen count guard (CAAS-006): prevents silent whitelist growth.
 # When adding a new entry above, increment this constant too.
 # Unauthorized bypass (adding an entry without incrementing) → import-time assertion failure.
-RETROACTIVELY_COVERED_FROZEN_COUNT: int = 66
+RETROACTIVELY_COVERED_FROZEN_COUNT: int = 69
 assert len(RETROACTIVELY_COVERED) == RETROACTIVELY_COVERED_FROZEN_COUNT, (
     f"RETROACTIVELY_COVERED has {len(RETROACTIVELY_COVERED)} entries but "
     f"RETROACTIVELY_COVERED_FROZEN_COUNT={RETROACTIVELY_COVERED_FROZEN_COUNT}. "

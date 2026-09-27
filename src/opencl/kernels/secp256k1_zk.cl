@@ -33,7 +33,7 @@ typedef struct {
 // Helper: Jacobian to Affine (inline)
 // =============================================================================
 
-inline void jacobian_to_affine_impl(const JacobianPoint* p,
+static inline void jacobian_to_affine_impl(const JacobianPoint* p,
                                      FieldElement* ax, FieldElement* ay) {
     FieldElement z_inv, z_inv2, z_inv3;
     field_inv_impl(&z_inv, &p->z);
@@ -47,7 +47,7 @@ inline void jacobian_to_affine_impl(const JacobianPoint* p,
 // Helper: Point to Compressed (33 bytes: prefix || x)
 // =============================================================================
 
-inline void point_to_compressed_impl(const JacobianPoint* p,
+static inline void point_to_compressed_impl(const JacobianPoint* p,
                                       uchar out[33]) {
     if (point_is_infinity(p)) {
         for (int i = 0; i < 33; ++i) out[i] = 0;
@@ -66,7 +66,7 @@ inline void point_to_compressed_impl(const JacobianPoint* p,
 // ZK Tagged Hash
 // =============================================================================
 
-inline void zk_tagged_hash_impl(const uchar* tag, uint tag_len,
+static inline void zk_tagged_hash_impl(const uchar* tag, uint tag_len,
                                  const uchar* data, uint data_len,
                                  uchar out[32]) {
     tagged_hash_impl(tag, tag_len, data, data_len, out);
@@ -77,7 +77,7 @@ inline void zk_tagged_hash_impl(const uchar* tag, uint tag_len,
 // =============================================================================
 // k = H("ZK/nonce" || (secret XOR H(aux)) || point_compressed || msg || aux)
 
-inline void zk_derive_nonce_impl(const Scalar* secret,
+static inline void zk_derive_nonce_impl(const Scalar* secret,
                                   const JacobianPoint* point,
                                   const uchar msg[32],
                                   const uchar aux[32],
@@ -118,7 +118,7 @@ inline void zk_derive_nonce_impl(const Scalar* secret,
 // =============================================================================
 // Proves knowledge of secret s such that P = s * B for arbitrary base B.
 
-inline int zk_knowledge_prove_impl(
+static inline int zk_knowledge_prove_impl(
     const Scalar* secret,
     const JacobianPoint* pubkey,
     const JacobianPoint* base,
@@ -198,7 +198,7 @@ inline int zk_knowledge_prove_impl(
 // 1b. Knowledge Proof -- Verification
 // =============================================================================
 
-inline int zk_knowledge_verify_impl(
+static inline int zk_knowledge_verify_impl(
     const ZKKnowledgeProof* proof,
     const JacobianPoint* pubkey,
     const JacobianPoint* base,
@@ -297,7 +297,7 @@ inline int zk_knowledge_verify_impl(
 // =============================================================================
 // Proves log_G(P) == log_H(Q) without revealing the discrete log.
 
-inline int zk_dleq_prove_impl(
+static inline int zk_dleq_prove_impl(
     const Scalar* secret,
     const JacobianPoint* G_pt,
     const JacobianPoint* H_pt,
@@ -379,7 +379,7 @@ inline int zk_dleq_prove_impl(
 // 2b. DLEQ Proof -- Verification
 // =============================================================================
 
-inline int zk_dleq_verify_impl(
+static inline int zk_dleq_verify_impl(
     const ZKDLEQProof* proof,
     const JacobianPoint* G_pt,
     const JacobianPoint* H_pt,
@@ -630,7 +630,7 @@ __constant const ZKTagMidstate ZK_BULLETPROOF_X_MIDSTATE = {{
 }};
 
 // Tagged hash using precomputed midstate (private address space)
-inline void zk_tagged_hash_midstate_impl(const ZKTagMidstate* midstate,
+static inline void zk_tagged_hash_midstate_impl(const ZKTagMidstate* midstate,
                                           const uchar* data, uint data_len,
                                           uchar out[32]) {
     SHA256Ctx ctx;
@@ -642,7 +642,7 @@ inline void zk_tagged_hash_midstate_impl(const ZKTagMidstate* midstate,
 }
 
 // Tagged hash using precomputed __constant midstate (for program-scope constants)
-inline void zk_tagged_hash_midstate_const_impl(__constant const ZKTagMidstate* midstate,
+static inline void zk_tagged_hash_midstate_const_impl(__constant const ZKTagMidstate* midstate,
                                                 const uchar* data, uint data_len,
                                                 uchar out[32]) {
     SHA256Ctx ctx;
@@ -654,7 +654,7 @@ inline void zk_tagged_hash_midstate_const_impl(__constant const ZKTagMidstate* m
 }
 
 // Inline field_from_bytes (big-endian bytes -> 4x64 limbs, no modular reduction)
-inline void field_from_bytes_impl(const uchar bytes[32], FieldElement* out) {
+static inline void field_from_bytes_impl(const uchar bytes[32], FieldElement* out) {
     for (int i = 0; i < 4; i++) {
         ulong limb = 0;
         int base = (3 - i) * 8;
@@ -665,7 +665,7 @@ inline void field_from_bytes_impl(const uchar bytes[32], FieldElement* out) {
 }
 
 // lift_x with even Y from FieldElement (not bytes)
-inline int lift_x_field_even_impl(const FieldElement* x, __global AffinePoint* out) {
+static inline int lift_x_field_even_impl(const FieldElement* x, __global AffinePoint* out) {
     FieldElement x2, x3, y2, seven, y;
     field_sqr_impl(&x2, x);
     field_mul_impl(&x3, &x2, x);
@@ -695,7 +695,7 @@ inline int lift_x_field_even_impl(const FieldElement* x, __global AffinePoint* o
 }
 
 // Try-and-increment: find point on curve starting from x
-inline void hash_to_point_increment_impl(FieldElement* x, __global AffinePoint* out) {
+static inline void hash_to_point_increment_impl(FieldElement* x, __global AffinePoint* out) {
     for (int attempt = 0; attempt < 256; ++attempt) {
         if (lift_x_field_even_impl(x, out)) return;
         // x += 1 (field addition with constant 1)
@@ -706,7 +706,7 @@ inline void hash_to_point_increment_impl(FieldElement* x, __global AffinePoint* 
 }
 
 // Affine point to 33-byte compressed (prefix || x_bytes)
-inline void affine_to_compressed_impl(const FieldElement* x, const FieldElement* y,
+static inline void affine_to_compressed_impl(const FieldElement* x, const FieldElement* y,
                                        uchar out[33]) {
     uchar y_bytes[32];
     field_to_bytes_impl(y, y_bytes);
@@ -739,7 +739,7 @@ typedef struct {
 // Checks: t_hat * H + tau_x * G == z^2 * V + delta * H + x * T1 + x^2 * T2
 // Ported from CUDA range_proof_poly_check_device.
 
-inline int range_proof_poly_check_impl(
+static inline int range_proof_poly_check_impl(
     const RangeProofPolyGPU* proof,
     const AffinePoint* commitment,
     const AffinePoint* H_gen)
@@ -930,7 +930,7 @@ __kernel void bulletproof_init_kernel(
 // Bulletproof Full Verify (single work-item per proof)
 // =============================================================================
 
-inline int range_verify_full_impl(
+static inline int range_verify_full_impl(
     const RangeProofGPU* proof,
     const AffinePoint* commitment,
     const AffinePoint* H_gen,
@@ -1277,7 +1277,7 @@ __kernel void range_proof_poly_batch(
 // hash_to_point_increment_impl already defined above
 
 // -- Single commitment --
-inline void pedersen_commit_impl(
+static inline void pedersen_commit_impl(
     const Scalar* value,
     const Scalar* blinding,
     const AffinePoint* H,

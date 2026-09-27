@@ -26,7 +26,7 @@ typedef struct {
 } RecoverableSignatureOCL;
 
 // -- lift_x to curve point with given parity ----------------------------------
-inline int lift_x_parity_impl(const FieldElement* x_fe, int parity, JacobianPoint* p) {
+static inline int lift_x_parity_impl(const FieldElement* x_fe, int parity, JacobianPoint* p) {
     FieldElement x2, x3, y2, y;
     field_sqr_impl(&x2, x_fe);
     field_mul_impl(&x3, &x2, x_fe);
@@ -83,7 +83,7 @@ __constant uchar RECOVERY_ORDER_BE[32] = {
 };
 
 // -- ECDSA sign recoverable ---------------------------------------------------
-inline int ecdsa_sign_recoverable_impl(const uchar msg_hash[32],
+static inline int ecdsa_sign_recoverable_impl(const uchar msg_hash[32],
                                         const Scalar* private_key,
                                         RecoverableSignatureOCL* rsig)
 {
@@ -187,7 +187,7 @@ inline int ecdsa_sign_recoverable_impl(const uchar msg_hash[32],
 
 // -- ECDSA public key recovery ------------------------------------------------
 // Q = r^-1 * (s*R - z*G)
-inline int ecdsa_recover_impl(const uchar msg_hash[32],
+static inline int ecdsa_recover_impl(const uchar msg_hash[32],
                                const Scalar* sig_r,
                                const Scalar* sig_s,
                                int recid,

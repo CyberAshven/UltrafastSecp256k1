@@ -27,7 +27,7 @@
 //     doubling formula; this path is negligible in batch GPU search pipelines
 // For non-degenerate inputs, full 2M+1S affine addition as described above.
 // ---------------------------------------------------------------------------
-inline void affine_add_impl(AffinePoint* r,
+static inline void affine_add_impl(AffinePoint* r,
                              const FieldElement* px, const FieldElement* py,
                              const FieldElement* qx, const FieldElement* qy) {
     FieldElement h, rr, t, lam;
@@ -67,7 +67,7 @@ inline void affine_add_impl(AffinePoint* r,
 // Returns only the X coordinate — for search pipelines where Y is not needed.
 //   h_inv: precomputed (Q.x - P.x)^{-1} from batch inversion
 // ---------------------------------------------------------------------------
-inline void affine_add_x_only_impl(FieldElement* rx,
+static inline void affine_add_x_only_impl(FieldElement* rx,
                                     const FieldElement* px, const FieldElement* py,
                                     const FieldElement* qx, const FieldElement* qy,
                                     const FieldElement* h_inv) {
@@ -85,7 +85,7 @@ inline void affine_add_x_only_impl(FieldElement* rx,
 // affine_add_lambda_impl: P + Q → (X3, Y3) with pre-inverted H (2M + 1S)
 // Full addition with precomputed H^{-1} from batch inversion.
 // ---------------------------------------------------------------------------
-inline void affine_add_lambda_impl(AffinePoint* r,
+static inline void affine_add_lambda_impl(AffinePoint* r,
                                     const FieldElement* px, const FieldElement* py,
                                     const FieldElement* qx, const FieldElement* qy,
                                     const FieldElement* h_inv) {
@@ -106,7 +106,7 @@ inline void affine_add_lambda_impl(AffinePoint* r,
 // ---------------------------------------------------------------------------
 // affine_compute_h_impl: compute H = Q.x - P.x for batch inversion
 // ---------------------------------------------------------------------------
-inline void affine_compute_h_impl(FieldElement* h,
+static inline void affine_compute_h_impl(FieldElement* h,
                                    const FieldElement* px,
                                    const FieldElement* qx) {
     field_sub_impl(h, qx, px);
@@ -121,7 +121,7 @@ inline void affine_compute_h_impl(FieldElement* h,
 //
 // Cost: 3(n-1) multiplications + 1 field_inv ≈ 3n + 300 M-eq
 // ---------------------------------------------------------------------------
-inline void affine_batch_inv_serial_impl(FieldElement* h,
+static inline void affine_batch_inv_serial_impl(FieldElement* h,
                                           FieldElement* prefix,
                                           int n) {
     // Forward pass: prefix[i] = h[0] * h[1] * ... * h[i]
@@ -147,7 +147,7 @@ inline void affine_batch_inv_serial_impl(FieldElement* h,
 // ---------------------------------------------------------------------------
 // Jacobian → Affine conversion (single point)
 // ---------------------------------------------------------------------------
-inline void jacobian_to_affine_convert_impl(AffinePoint* r,
+static inline void jacobian_to_affine_convert_impl(AffinePoint* r,
                                              const FieldElement* x,
                                              const FieldElement* y,
                                              const FieldElement* z) {
@@ -163,7 +163,7 @@ inline void jacobian_to_affine_convert_impl(AffinePoint* r,
 // ---------------------------------------------------------------------------
 // Batch Jacobian → Affine (Montgomery's trick on Z values)
 // ---------------------------------------------------------------------------
-inline void batch_jacobian_to_affine_serial_impl(FieldElement* x,       // [n] J.X → affine x
+static inline void batch_jacobian_to_affine_serial_impl(FieldElement* x,       // [n] J.X → affine x
                                                   FieldElement* y,       // [n] J.Y → affine y
                                                   FieldElement* z,       // [n] J.Z → scratch
                                                   FieldElement* prefix,  // [n] scratch

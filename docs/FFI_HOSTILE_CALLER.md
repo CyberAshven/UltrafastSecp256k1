@@ -1,6 +1,6 @@
 # FFI Hostile-Caller Coverage
 
-**Last updated**: 2026-09-22 | **Version**: 4.6.0
+**Last updated**: 2026-09-22 | **Version**: 4.6.2
 
 ### 2026-09-22 - `ufsecp_release_process_resources` hostile-caller contract (GitHub #430, paired with `include/ufsecp/ufsecp.h`)
 
