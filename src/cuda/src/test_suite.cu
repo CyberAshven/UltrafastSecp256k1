@@ -1214,6 +1214,13 @@ static bool test_field_inv_edge(bool verbose) {
     if (verbose) std::cout << "\nField inverse edge cases:\n";
     bool ok = true;
 
+    HostFieldElement zero;
+    if (!(zero.inverse() == zero)) {
+        if (verbose)
+            std::cout << "    FAIL: inv(0) != 0\n";
+        ok = false;
+    }
+
     // inv(1) = 1
     HostFieldElement one = HostFieldElement::one();
     HostFieldElement inv1 = one.inverse();
@@ -1251,6 +1258,22 @@ static bool test_field_inv_edge(bool verbose) {
         HostFieldElement prod = val * inv_val;
         if (!(prod == HostFieldElement::one())) {
             if (verbose) std::cout << "    FAIL: " << v << " * inv(" << v << ") != 1\n";
+            ok = false;
+        }
+    }
+
+    // Exercise the complete addition chain with deterministic wide inputs.
+    std::mt19937_64 rng(0x7069636b617865ULL);
+    for (int sample = 0; sample < 64; ++sample) {
+        HostFieldElement val;
+        for (auto& limb : val.limbs)
+            limb = rng();
+        val.limbs[3] >>= 1;  // canonical: val < 2^255 < p
+        if (val == zero)
+            val = one;
+        if (!(val * val.inverse() == one)) {
+            if (verbose)
+                std::cout << "    FAIL: wide inverse sample " << sample << "\n";
             ok = false;
         }
     }

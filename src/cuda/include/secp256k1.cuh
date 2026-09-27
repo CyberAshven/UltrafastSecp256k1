@@ -2615,10 +2615,10 @@ __device__ __forceinline__ void field_sqr_n(FieldElement* a, int n) {
     }
 }
 
-// Optimized Fermat chain for p-2: 255 sqr + 16 mul = 271 ops (vs 300 before)
+// Optimized Fermat chain for p-2: 255 sqr + 15 mul = 270 ops (vs 300 before)
 // p-2 = (2^223 - 1) << 33 | (2^22 - 1) << 10 | 0b101101
 // Pattern: 223 ones, 1 zero, 22 ones, 4 zeros, 101101
-// Same temp count as original (6 temps + t) to maintain register pressure
+// Reuses existing intermediates (6 temps + t); no additional temporaries.
 __device__ inline void field_inv_fermat_chain_impl(const FieldElement* a, FieldElement* r) {
     FieldElement x_0, x_1, x_2, x_3, x_4, x_5;
     FieldElement t;
@@ -2692,12 +2692,15 @@ __device__ inline void field_inv_fermat_chain_impl(const FieldElement* a, FieldE
     field_sqr(&t, &t);
 
     // Append 101101 (6 bits)
-    field_sqr(&t, &t); field_mul(&t, a, &t);  // 1
-    field_sqr(&t, &t);                          // 0
-    field_sqr(&t, &t); field_mul(&t, a, &t);  // 1
-    field_sqr(&t, &t); field_mul(&t, a, &t);  // 1
-    field_sqr(&t, &t);                          // 0
-    field_sqr(&t, &t); field_mul(&t, a, r);   // 1
+    field_sqr(&t, &t);
+    field_mul(&t, a, &t);  // 1
+    field_sqr(&t, &t);     // 0
+    field_sqr(&t, &t);
+    field_sqr(&t, &t);
+    field_mul(&t, &x_0, &t);  // 11: reuse a^3
+    field_sqr(&t, &t);        // 0
+    field_sqr(&t, &t);
+    field_mul(&t, a, r);  // 1
 }
 
 __device__ inline void field_inv(const FieldElement* a, FieldElement* r) {
