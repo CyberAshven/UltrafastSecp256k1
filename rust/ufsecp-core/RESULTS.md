@@ -38,6 +38,34 @@ Portable CPU operations have functional coverage, not a claim to match the
 native assembly/GLV engine's performance. Constant-time auditing, AMD/Intel GPU
 backends, and physical testing beyond this NVIDIA device are outside this port.
 
-Final packaging checks, repeat measurements and native regression-suite status
-will be recorded before requesting review. The first native Windows build hit
-a long output-path compiler error; the retry uses a shorter out-of-tree path.
+The pinned package at `e346efe3` was rebuilt and retested. Final matched sessions:
+
+| Matched session | Native baseline (million candidates/s) | Rust port | Change |
+|---|---:|---:|---:|
+| Original Pickaxe | 114.2391 | 123.1706 | +7.82% |
+| Current native upstream adapter | 115.2049 | 120.4858 | +4.58% |
+
+Every trial, compiler/revision metadata, and PTX SHA-256 values are retained in
+[`mining-results.json`](mining-results.json). The second native session also had
+clock fluctuations; no samples were removed. The candidate was faster in all
+four session aggregates, but individual-trial and hardware variability remain.
+
+Final functional checks repeated the 773-vector GPU probe, 13,920 mining
+candidates and 216 VM cases. The miner's normal suite passed 266 tests, with
+21 explicit ignores and one physical wgpu test filtered. Its existing CUDA
+full-pipeline and RFC6979-path tests ran on the physical GPU. Only SM 12.0 has
+physical coverage; SM 7.5 compilation passed locally and in CI.
+
+The [Rust core workflow](https://github.com/CyberAshven/UltrafastSecp256k1/actions/runs/36317306518)
+passed Windows/Linux host checks and both GPU architecture compilations.
+
+Native regression validation used unchanged C++ sources. The first Windows
+build exceeded MSVC output-path limits; the shorter `D:/Qubes/build/uf-native-port`
+build succeeded. CTest passed 413/438 cases initially. All 24 source-lookup and
+console-encoding failures passed when their exact commands were rerun from the
+repository root with `PYTHONIOENCODING=utf-8` and `PYTHONUTF8=1`. Thus 437 test
+processes passed. The remaining OpenSSL cross-check returns its existing
+advisory code 77 because optional OpenSSL headers are absent; this is not a
+claim that the unmodified CTest invocation was green. Optional Python
+coincurve/noble comparisons were also unavailable and are not counted as
+independent coverage. No native tests or skip policies were changed.
