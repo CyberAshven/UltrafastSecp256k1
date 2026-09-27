@@ -56,6 +56,14 @@ candidates and 216 VM cases. The miner's normal suite passed 266 tests, with
 full-pipeline and RFC6979-path tests ran on the physical GPU. Only SM 12.0 has
 physical coverage; SM 7.5 compilation passed locally and in CI.
 
+Downstream's subsequent Rust 1.98 Clippy cleanup rebuilt its PTX as
+`8e0df066f08e4d0cc5d1f2c1f6343fe268cae01dff05cccc13a951472e38d1c1`.
+Raw-byte comparison against the timed `b2081dc6...` artifact found only its
+RFC6979 helper changed. All incremental mining kernels and their arithmetic/hash
+functions were byte-identical. The physical GPU probe, mining oracle, VM cases
+and normal miner suite passed again, including RFC6979. Timings were not
+repeated for this helper-only change; both hashes are recorded separately.
+
 The [Rust core workflow](https://github.com/CyberAshven/UltrafastSecp256k1/actions/runs/36317306518)
 passed Windows/Linux host checks and both GPU architecture compilations.
 

@@ -501,5 +501,25 @@
       "not the complete UltrafastSecp256k1 API",
       "not deployed live or merged to master"
     ]
+  },
+  "post_lint_rebuild": {
+    "measured_ptx_sha256": "b2081dc6a02bf0db86d83fd3b86879901087157ef6ef92ca1f92a449327247da",
+    "final_ptx_sha256": "8e0df066f08e4d0cc5d1f2c1f6343fe268cae01dff05cccc13a951472e38d1c1",
+    "changed_sections": [
+      ".func _RNvNtCsgQWlsu3hipw_19pickaxe_rust_engine5nonce11bch_rfc6979("
+    ],
+    "byte_identical_sections": 33,
+    "meaning": "Only the RFC6979 helper changed after the Clippy byte-encoding fix. Incremental-mining kernels and their called arithmetic/hash functions are byte-identical. Final physical GPU RFC6979 and full-pipeline correctness tests passed again; performance was not remeasured after this helper-only change.",
+    "pickaxe_revision": "45ec51b",
+    "repeated_checks": {
+      "gpu_vectors": 773,
+      "mining_candidates": 13920,
+      "vm_accepted": 103,
+      "vm_rejected": 113,
+      "pickaxe_suite_passed": 266,
+      "pickaxe_suite_ignored": 21,
+      "pickaxe_suite_filtered": 1,
+      "rfc6979_gpu_tests": "passed"
+    }
   }
 }
